@@ -515,13 +515,141 @@ let toggled = await aware.toggle("remember-toggle")
 
 ## Breathe Integration
 
-This is the **standalone** Aware framework. For **Breathe IDE users**, additional features are available:
-- **MCP Integration**: 13+ tools for Claude Code (`ui_snapshot`, `ui_action`, `ui_wait`)
+This is the **standalone** Aware framework. For **Breathe IDE users**, enhanced features are available through deep integration with the Breathe ecosystem.
+
+### Snapshot Format Storage & Management 🆕
+
+**Version 3.0** introduces persistent storage of snapshot format metadata, user preferences, and capture history in Breathe's SQLite database (`~/.breathe/index.sqlite`).
+
+#### Dual Format System
+
+**UI Snapshot Formats** (Runtime State Capture):
+- `compact` - 100-120 tokens (LLM-optimized, ghost UI testing)
+- `text` - 200-300 tokens (human-readable tree structure)
+- `json` - 300-500 tokens (programmatic parsing)
+- `markdown` - 250-400 tokens (documentation)
+
+**Documentation Export Formats** (Framework API Docs):
+- `compact` - 1000-1200 tokens (LLM planning)
+- `jsonSchema` - 1400-1600 tokens (validation and queries)
+- `mermaid` - 400-600 tokens (Breathe IDE visualization)
+- `markdown` - 2500-3500 tokens (human-readable docs)
+- `openapi` - 2000-3000 tokens (external tool integration)
+
+#### MCP Tools (7 Snapshot Format Tools)
+
+Access via Claude Code or Breathe IDE:
+
+```
+# List available formats with metadata
+snapshot_formats_list
+
+# Get current project preferences
+snapshot_preferences_get
+
+# Update preferences
+snapshot_preferences_set
+
+# View capture history
+snapshot_history_get
+
+# Get statistics and savings
+snapshot_history_stats
+
+# Record a snapshot (internal)
+snapshot_history_record
+
+# Get AI-powered format recommendation
+snapshot_recommend_format
+```
+
+**Example Usage:**
+```
+User: List available Aware snapshot formats
+Claude: [Calls snapshot_formats_list]
+
+Found 9 snapshot formats
+
+**UI Snapshot Formats (4):**
+- **Compact** (compact): LLM-optimized, minimal tokens
+  Tokens: 100-120, Use: Ghost UI testing
+- **Text** (text): Human-readable tree structure
+  Tokens: 200-300, Use: Human debugging
+...
+```
+
+#### Database Schema
+
+Three new tables store format data:
+
+**`aware_snapshot_formats`** - Format metadata registry:
+- Format system (ui_snapshot | doc_export)
+- Token counts (min/max)
+- Use cases and priorities
+- Config options (JSON)
+
+**`aware_preferences`** - Per-project preferences:
+- Default formats (UI & Doc Export)
+- Snapshot settings (hidden views, max depth, compression)
+- Performance budgets (lenient/standard/strict: 500ms/250ms/100ms)
+- WCAG accessibility level (A/AA/AAA)
+- Auto-export settings
+
+**`aware_snapshot_history`** - Audit trail:
+- Capture timestamp and format
+- View count and token count
+- Capture duration (performance tracking)
+- Links to test runs
+- Content hash (deduplication)
+
+#### Token Efficiency Tracking
+
+Breathe automatically calculates and displays token savings:
+
+```
+**Snapshot Statistics (Project 1)**
+
+Overall:
+- Total Snapshots: 250
+- Avg Token Count: 115
+- Avg Capture Time: 48ms
+
+Token Efficiency:
+- Savings vs Screenshots: 99.3% (15,000 → 115 tokens)
+- Cost Savings: ~$0.045 per snapshot
+
+For 100 snapshots:
+- Before: $4.50
+- After: $0.033
+- Total Savings: $4.47
+```
+
+#### Smart Format Recommendation
+
+AI-powered format selection based on test context:
+
+```swift
+// LLM asks for recommendation
+await Aware.shared.recommendFormat(
+    testType: "e2e",
+    viewCount: 25,
+    complexity: "high",
+    needsDetails: false
+)
+
+// Returns: ui_snapshot/compact
+// Reason: "Compact format recommended for complex UIs (99.3% token savings)"
+```
+
+### Additional Breathe Features
+
 - **Multi-App Control**: Test any macOS app or iOS Simulator
 - **Intelligence Features**: Blocker diagnostics, error recovery, test generation
 - **Instrumentation Guidance**: Code analysis suggestions
+- **UI Testing Dashboard**: Visual test results and coverage
+- **Settings Integration**: Glassmorphism UI for format preferences
 
-See Breathe's CLAUDE.md for ecosystem-specific features.
+See Breathe's CLAUDE.md for complete ecosystem features.
 
 ## Token Efficiency Comparison
 
@@ -546,6 +674,112 @@ See `/Examples` directory for:
 - **SettingsPanel**: Settings with toggles and pickers
 - **DataTable**: Sortable table with pagination
 - **MultiStepWizard**: Wizard with navigation and state
+
+## Implementing Breathe Integration
+
+### Automatic Snapshot Recording (Optional)
+
+To automatically record snapshots to Breathe's database when capturing, add this to your Aware setup:
+
+```swift
+import Aware
+
+class MyApp: App {
+    init() {
+        // Configure Aware with Breathe MCP integration
+        Task {
+            await configureAwareWithBreathe()
+        }
+    }
+
+    func configureAwareWithBreathe() async {
+        // Check if Breathe MCP is available
+        guard let mcpEndpoint = ProcessInfo.processInfo.environment["BREATHE_MCP_ENDPOINT"] else {
+            print("Breathe MCP not configured, using standalone mode")
+            return
+        }
+
+        // Enable auto-recording of snapshots
+        Aware.shared.onSnapshotCaptured = { snapshot in
+            await recordSnapshotToBreatheMCP(snapshot)
+        }
+    }
+
+    func recordSnapshotToBreatheMCP(_ snapshot: AwareSnapshotResult) async {
+        // Call Breathe MCP tool to record snapshot
+        // (Implementation depends on your MCP client)
+        let record = [
+            "formatSystem": "ui_snapshot",
+            "formatName": snapshot.format,
+            "viewCount": snapshot.viewCount,
+            "tokenCount": estimateTokenCount(snapshot.content),
+        ]
+
+        // Send to Breathe via MCP
+        try? await breatheMCPClient.callTool(
+            name: "snapshot_history_record",
+            arguments: ["snapshot": record]
+        )
+    }
+}
+```
+
+### Reading Preferences from Breathe
+
+Your app can read user preferences to use their preferred snapshot format:
+
+```swift
+// Get preferences from Breathe
+let prefs = try await breatheMCPClient.callTool(
+    name: "snapshot_preferences_get",
+    arguments: [:]
+)
+
+// Use preferred format
+let format = AwareSnapshotFormat(rawValue: prefs.defaultUISnapshotFormat) ?? .compact
+let snapshot = await Aware.shared.snapshot(format: format)
+```
+
+### Integration Architecture
+
+```
+┌─────────────────┐
+│   Your App      │
+│  (Aware-based)  │
+└────────┬────────┘
+         │
+         │ IPC (File-based)
+         │ ~/.aware/
+         ▼
+┌─────────────────┐      MCP Tools       ┌──────────────────┐
+│  Breathe IDE    │◄────────────────────►│  Claude Code     │
+│                 │                       │  (LLM)           │
+└────────┬────────┘                       └──────────────────┘
+         │
+         │ SQLite
+         ▼
+┌─────────────────────────┐
+│  ~/.breathe/index.sqlite│
+│  - snapshot_formats     │
+│  - aware_preferences    │
+│  - snapshot_history     │
+└─────────────────────────┘
+```
+
+**Flow:**
+1. Your app captures snapshot with Aware
+2. Optionally records to Breathe database via MCP
+3. Claude Code queries formats/preferences via MCP tools
+4. Breathe UI displays statistics and settings
+5. User preferences flow back to your app
+
+### Benefits of Breathe Integration
+
+1. **Persistent Preferences**: Format settings persist across sessions
+2. **Historical Analysis**: Track token usage over time
+3. **Cost Optimization**: Identify expensive test patterns
+4. **Team Collaboration**: Share format recommendations
+5. **AI Decision Support**: LLMs choose optimal format automatically
 
 ## Build Troubleshooting
 
