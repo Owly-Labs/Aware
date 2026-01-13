@@ -293,24 +293,398 @@ final class AwareServiceTests: XCTestCase {
     @MainActor
     func testListRegisteredActions() async throws {
         // Given
-        let viewId1 = "action-list-1-\(UUID().uuidString)"
-        let viewId2 = "action-list-2-\(UUID().uuidString)"
-        Aware.shared.registerView(viewId1, label: "Action 1")
-        Aware.shared.registerView(viewId2, label: "Action 2")
-        Aware.shared.registerAction(viewId1) { }
-        Aware.shared.registerAction(viewId2) { }
+        let viewId1 = "test-action-1-\(UUID().uuidString)"
+        let viewId2 = "test-action-2-\(UUID().uuidString)"
 
         // When
-        let actions = Aware.shared.listRegisteredActions()
+        Aware.shared.registerAction(viewId1) { print("Action 1") }
+        Aware.shared.registerAction(viewId2) { print("Action 2") }
 
         // Then
+        let actions = Aware.shared.listRegisteredActions()
         XCTAssertTrue(actions.contains(viewId1))
         XCTAssertTrue(actions.contains(viewId2))
+        XCTAssertEqual(actions.count, 2)
 
         // Cleanup
         Aware.shared.unregisterAction(viewId1)
         Aware.shared.unregisterAction(viewId2)
+    }
+
+    // MARK: - Additional Comprehensive Tests
+
+    @MainActor
+    func testUnregisterView() async throws {
+        // Given
+        let viewId = "test-unregister-\(UUID().uuidString)"
+        Aware.shared.registerView(viewId, label: "Test View")
+
+        // Verify view exists and is visible
+        let view = Aware.shared.query().where { $0.id == viewId }.first()
+        XCTAssertNotNil(view)
+        XCTAssertTrue(view?.isVisible ?? false)
+
+        // When
+        Aware.shared.unregisterView(viewId)
+
+        // Then - view still exists but is marked as not visible
+        let unregisteredView = Aware.shared.query().where { $0.id == viewId }.first()
+        XCTAssertNotNil(unregisteredView)
+        XCTAssertFalse(unregisteredView?.isVisible ?? true)
+
+        // Cleanup - actually remove from registry
+        Aware.shared.reset()
+    }
+
+    @MainActor
+    func testReset() async throws {
+        // Given
+        let viewId1 = "test-reset-1-\(UUID().uuidString)"
+        let viewId2 = "test-reset-2-\(UUID().uuidString)"
+        Aware.shared.registerView(viewId1, label: "View 1")
+        Aware.shared.registerView(viewId2, label: "View 2")
+        Aware.shared.registerState(viewId1, key: "test", value: "value")
+
+        // Verify views exist
+        XCTAssertEqual(Aware.shared.visibleViewCount, 2)
+
+        // When
+        Aware.shared.reset()
+
+        // Then
+        XCTAssertEqual(Aware.shared.visibleViewCount, 0)
+        XCTAssertTrue(Aware.shared.registeredViewIds.isEmpty)
+        XCTAssertTrue(Aware.shared.getAllStates().isEmpty)
+    }
+
+    @MainActor
+    func testAssertVisible() async throws {
+        // Given
+        let viewId = "test-assert-visible-\(UUID().uuidString)"
+        Aware.shared.registerView(viewId, label: "Test View")
+
+        // When & Then
+        let result = Aware.shared.assertVisible(viewId)
+        XCTAssertTrue(result.passed)
+        XCTAssertEqual(result.message, "View '\(viewId)' is visible")
+
+        // Test non-existent view
+        let nonexistentResult = Aware.shared.assertVisible("nonexistent")
+        XCTAssertFalse(nonexistentResult.passed)
+        XCTAssertTrue(nonexistentResult.message.contains("not found"))
+
+        // Cleanup
+        Aware.shared.unregisterView(viewId)
+    }
+
+    @MainActor
+    func testAssertState() async throws {
+        // Given
+        let viewId = "test-assert-state-\(UUID().uuidString)"
+        Aware.shared.registerView(viewId, label: "Test View")
+        Aware.shared.registerState(viewId, key: "status", value: "active")
+
+        // When & Then
+        let result = Aware.shared.assertState(viewId, key: "status", equals: "active")
+        XCTAssertTrue(result.passed)
+        XCTAssertEqual(result.message, "View '\(viewId)'.status == 'active'")
+
+        // Test incorrect value
+        let wrongResult = Aware.shared.assertState(viewId, key: "status", equals: "inactive")
+        XCTAssertFalse(wrongResult.passed)
+        XCTAssertTrue(wrongResult.message.contains("is 'active', expected 'inactive'"))
+
+        // Cleanup
+        Aware.shared.unregisterView(viewId)
+    }
+
+    @MainActor
+    func testAssertExists() async throws {
+        // Given
+        let viewId = "test-assert-exists-\(UUID().uuidString)"
+        Aware.shared.registerView(viewId, label: "Test View")
+
+        // When & Then
+        let result = Aware.shared.assertExists(viewId)
+        XCTAssertTrue(result.passed)
+        XCTAssertEqual(result.message, "View '\(viewId)' exists")
+
+        // Test non-existent view
+        let nonexistentResult = Aware.shared.assertExists("nonexistent")
+        XCTAssertFalse(nonexistentResult.passed)
+        XCTAssertTrue(nonexistentResult.message.contains("does not exist"))
+
+        // Cleanup
+        Aware.shared.unregisterView(viewId)
+    }
+
+    @MainActor
+    func testAssertViewCount() async throws {
+        // Given
+        let initialCount = Aware.shared.visibleViewCount
+        let viewId1 = "test-count-1-\(UUID().uuidString)"
+        let viewId2 = "test-count-2-\(UUID().uuidString)"
+        Aware.shared.registerView(viewId1, label: "View 1")
+        Aware.shared.registerView(viewId2, label: "View 2")
+
+        // When & Then
+        let result = Aware.shared.assertViewCount(initialCount + 2)
+        XCTAssertTrue(result.passed)
+        XCTAssertEqual(result.message, "View count is \(initialCount + 2)")
+
+        // Test incorrect count
+        let wrongResult = Aware.shared.assertViewCount(999)
+        XCTAssertFalse(wrongResult.passed)
+        XCTAssertTrue(wrongResult.message.contains("expected 999"))
+
+        // Cleanup
         Aware.shared.unregisterView(viewId1)
+        Aware.shared.unregisterView(viewId2)
+    }
+
+    @MainActor
+    func testRegisterAction() async throws {
+        // Given
+        let viewId = "test-register-action-\(UUID().uuidString)"
+        var actionCalled = false
+
+        // When
+        Aware.shared.registerAction(viewId) {
+            actionCalled = true
+        }
+
+        // Then
+        XCTAssertTrue(Aware.shared.hasDirectAction(viewId))
+
+        // Test unregister
+        Aware.shared.unregisterAction(viewId)
+        XCTAssertFalse(Aware.shared.hasDirectAction(viewId))
+    }
+
+    @MainActor
+    func testFindElements() async throws {
+        // Given
+        let viewId1 = "test-find-1-\(UUID().uuidString)"
+        let viewId2 = "test-find-2-\(UUID().uuidString)"
+        Aware.shared.registerView(viewId1, label: "Button View")
+        Aware.shared.registerView(viewId2, label: "Text View")
+
+        // When
+        let allViews = Aware.shared.findElements { $0.isVisible }
+
+        // Then
+        XCTAssertTrue(allViews.count >= 2)
+        XCTAssertTrue(allViews.contains { $0.id == viewId1 })
+        XCTAssertTrue(allViews.contains { $0.id == viewId2 })
+
+        // Cleanup
+        Aware.shared.unregisterView(viewId1)
+        Aware.shared.unregisterView(viewId2)
+    }
+
+    @MainActor
+    func testFindByLabel() async throws {
+        // Given
+        let viewId = "test-find-label-\(UUID().uuidString)"
+        Aware.shared.registerView(viewId, label: "Login Button")
+
+        // When
+        let results = Aware.shared.findByLabel("Login")
+
+        // Then
+        XCTAssertEqual(results.count, 1)
+        XCTAssertEqual(results.first?.id, viewId)
+
+        // Test case-insensitive
+        let caseResults = Aware.shared.findByLabel("login")
+        XCTAssertEqual(caseResults.count, 1)
+
+        // Cleanup
+        Aware.shared.unregisterView(viewId)
+    }
+
+    @MainActor
+    func testFindByState() async throws {
+        // Given
+        let viewId = "test-find-state-\(UUID().uuidString)"
+        Aware.shared.registerView(viewId, label: "Test View")
+        Aware.shared.registerState(viewId, key: "enabled", value: "true")
+
+        // When
+        let results = Aware.shared.findByState(key: "enabled", value: "true")
+
+        // Then
+        XCTAssertEqual(results.count, 1)
+        XCTAssertEqual(results.first?.id, viewId)
+
+        // Cleanup
+        Aware.shared.unregisterView(viewId)
+    }
+
+    @MainActor
+    func testUpdateFrame() async throws {
+        // Given
+        let viewId = "test-frame-\(UUID().uuidString)"
+        Aware.shared.registerView(viewId, label: "Test View")
+        let newFrame = CGRect(x: 10, y: 20, width: 100, height: 200)
+
+        // When
+        Aware.shared.updateFrame(viewId, frame: newFrame)
+
+        // Then
+        let view = Aware.shared.query().where { $0.id == viewId }.first()
+        XCTAssertEqual(view?.frame, newFrame)
+
+        // Cleanup
+        Aware.shared.unregisterView(viewId)
+    }
+
+    @MainActor
+    func testClearState() async throws {
+        // Given
+        let viewId = "test-clear-state-\(UUID().uuidString)"
+        Aware.shared.registerView(viewId, label: "Test View")
+        Aware.shared.registerState(viewId, key: "testKey", value: "testValue")
+
+        // Verify state exists
+        XCTAssertEqual(Aware.shared.getStateValue(viewId, key: "testKey"), "testValue")
+
+        // When
+        Aware.shared.clearState(viewId)
+
+        // Then
+        XCTAssertNil(Aware.shared.getStateValue(viewId, key: "testKey"))
+
+        // Cleanup
+        Aware.shared.unregisterView(viewId)
+    }
+
+    @MainActor
+    func testStateMatches() async throws {
+        // Given
+        let viewId = "test-state-match-\(UUID().uuidString)"
+        Aware.shared.registerView(viewId, label: "Test View")
+        Aware.shared.registerState(viewId, key: "status", value: "active")
+
+        // When & Then
+        XCTAssertTrue(Aware.shared.stateMatches(viewId, key: "status", value: "active"))
+        XCTAssertFalse(Aware.shared.stateMatches(viewId, key: "status", value: "inactive"))
+        XCTAssertFalse(Aware.shared.stateMatches(viewId, key: "nonexistent", value: "active"))
+
+        // Cleanup
+        Aware.shared.unregisterView(viewId)
+    }
+
+    @MainActor
+    func testRegisterAnimation() async throws {
+        // Given
+        let viewId = "test-animation-\(UUID().uuidString)"
+        Aware.shared.registerView(viewId, label: "Test View")
+        let animationState = AwareAnimationState(isAnimating: true, animationType: "spring", duration: 0.3)
+
+        // When
+        Aware.shared.registerAnimation(viewId, animation: animationState)
+
+        // Then
+        let view = Aware.shared.query().where { $0.id == viewId }.first()
+        XCTAssertEqual(view?.animation?.animationType, "spring")
+        XCTAssertEqual(view?.animation?.duration, 0.3)
+        XCTAssertEqual(view?.animation?.isAnimating, true)
+
+        // Cleanup
+        Aware.shared.unregisterView(viewId)
+    }
+
+    @MainActor
+    func testClearAnimation() async throws {
+        // Given
+        let viewId = "test-clear-animation-\(UUID().uuidString)"
+        Aware.shared.registerView(viewId, label: "Test View")
+        let animationState = AwareAnimationState(isAnimating: true, animationType: "spring", duration: 0.3)
+        Aware.shared.registerAnimation(viewId, animation: animationState)
+
+        // Verify animation exists
+        var view = Aware.shared.query().where { $0.id == viewId }.first()
+        XCTAssertNotNil(view?.animation)
+
+        // When
+        Aware.shared.clearAnimation(viewId)
+
+        // Then
+        view = Aware.shared.query().where { $0.id == viewId }.first()
+        XCTAssertNil(view?.animation)
+
+        // Cleanup
+        Aware.shared.unregisterView(viewId)
+    }
+
+    @MainActor
+    func testDescribeView() async throws {
+        // Given
+        let viewId = "test-describe-\(UUID().uuidString)"
+        Aware.shared.registerView(viewId, label: "Test View", isContainer: true)
+        Aware.shared.registerState(viewId, key: "count", value: "5")
+
+        // When
+        let description = Aware.shared.describeView(viewId)
+
+        // Then
+        XCTAssertNotNil(description)
+        XCTAssertEqual(description?.id, viewId)
+        XCTAssertEqual(description?.label, "Test View")
+        XCTAssertEqual(description?.isVisible, true)
+        XCTAssertEqual(description?.state?["count"], "5")
+
+        // Cleanup
+        Aware.shared.unregisterView(viewId)
+    }
+
+    @MainActor
+    func testRegisteredViewIds() async throws {
+        // Given
+        let viewId1 = "test-ids-1-\(UUID().uuidString)"
+        let viewId2 = "test-ids-2-\(UUID().uuidString)"
+
+        // Initially should be empty or have existing views
+        let initialCount = Aware.shared.registeredViewIds.count
+
+        // When
+        Aware.shared.registerView(viewId1, label: "View 1")
+        Aware.shared.registerView(viewId2, label: "View 2")
+
+        // Then
+        let viewIds = Aware.shared.registeredViewIds
+        XCTAssertTrue(viewIds.contains(viewId1))
+        XCTAssertTrue(viewIds.contains(viewId2))
+        XCTAssertEqual(viewIds.count, initialCount + 2)
+
+        // Cleanup
+        Aware.shared.unregisterView(viewId1)
+        Aware.shared.unregisterView(viewId2)
+    }
+
+    @MainActor
+    func testVisibleViewCount() async throws {
+        // Given
+        let viewId1 = "test-visible-1-\(UUID().uuidString)"
+        let viewId2 = "test-visible-2-\(UUID().uuidString)"
+
+        let initialCount = Aware.shared.visibleViewCount
+
+        // When
+        Aware.shared.registerView(viewId1, label: "Visible View")
+        Aware.shared.registerView(viewId2, label: "Hidden View")
+
+        // Then
+        XCTAssertEqual(Aware.shared.visibleViewCount, initialCount + 2)
+
+        // When making one invisible
+        Aware.shared.unregisterView(viewId1)
+
+        // Then
+        XCTAssertEqual(Aware.shared.visibleViewCount, initialCount + 1)
+
+        // Cleanup
         Aware.shared.unregisterView(viewId2)
     }
 }
