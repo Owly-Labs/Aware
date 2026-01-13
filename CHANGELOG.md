@@ -5,9 +5,11 @@ All notable changes to the Aware framework will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+> ⚠️ **Beta Status**: Versions 2.x are development beta releases. APIs may change. Not recommended for production.
+
 ## [Unreleased]
 
-## [2.2.0] - 2026-01-12
+## [2.2.0-beta] - 2026-01-12
 
 ### Added - Phase 9: AetherSing Integration Patterns
 

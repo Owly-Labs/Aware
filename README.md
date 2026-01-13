@@ -5,6 +5,9 @@
 [![Swift Version](https://img.shields.io/badge/Swift-5.9+-orange.svg)](https://swift.org)
 [![Platform](https://img.shields.io/badge/Platform-iOS%20%7C%20macOS%20%7C%20Web%20%7C%20Backend-blue.svg)](https://developer.apple.com)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/Status-Beta-yellow.svg)](https://github.com/adrian-mei/Aware)
+
+> ⚠️ **Development Beta**: This is an active development release. APIs and features are subject to change. Not recommended for production use yet.
 
 > **Repository:** [github.com/adrian-mei/Aware](https://github.com/adrian-mei/Aware)
 >
