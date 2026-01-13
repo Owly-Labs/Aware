@@ -400,14 +400,22 @@ public struct StalenessWarning: Sendable, Identifiable {
     }
 }
 
-// MARK: - Assertion Result
+// MARK: - Assertion Result (v3.0 Enhanced)
 
 public struct AwareAssertionResult: Sendable {
     public let passed: Bool
+    public let viewId: String
+    public let key: String
+    public let expected: String?
+    public let actual: String?
     public let message: String
 
-    public init(passed: Bool, message: String) {
+    public init(passed: Bool, viewId: String, key: String, expected: String? = nil, actual: String? = nil, message: String) {
         self.passed = passed
+        self.viewId = viewId
+        self.key = key
+        self.expected = expected
+        self.actual = actual
         self.message = message
     }
 
@@ -458,19 +466,27 @@ public struct AwareDiff: Sendable {
     }
 }
 
-// MARK: - Tap Result
+// MARK: - Tap Result (v3.0 Enhanced)
 
 public struct AwareTapResult: Sendable {
     public let success: Bool
-    public let viewId: String?
+    public let viewId: String
+    public let actionType: TapActionType
     public let message: String
+    public let duration: TimeInterval?
     public let actionDescription: String?
 
-    public init(success: Bool, viewId: String?, message: String, actionDescription: String? = nil) {
+    public init(success: Bool, viewId: String, actionType: TapActionType, message: String, duration: TimeInterval? = nil, actionDescription: String? = nil) {
         self.success = success
         self.viewId = viewId
+        self.actionType = actionType
         self.message = message
+        self.duration = duration
         self.actionDescription = actionDescription
+    }
+
+    public enum TapActionType: String, Sendable {
+        case tap, longPress, doubleTap
     }
 
     public var emoji: String { success ? "✅" : "❌" }

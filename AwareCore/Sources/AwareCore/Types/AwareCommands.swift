@@ -117,3 +117,94 @@ public struct AwareSnapshotResult: Codable, Sendable {
         self.timestamp = timestamp
     }
 }
+
+// MARK: - v3.0 Additional Result Types (others defined in AwareTypes.swift)
+
+/// Result of swipe action
+public struct AwareSwipeResult: Sendable {
+    public let success: Bool
+    public let viewId: String
+    public let direction: String
+    public let message: String
+
+    public init(success: Bool, viewId: String, direction: String, message: String) {
+        self.success = success
+        self.viewId = viewId
+        self.direction = direction
+        self.message = message
+    }
+}
+
+/// Result of text input action (typeText, setText, appendText, clearText)
+public struct AwareTextResult: Sendable {
+    public let success: Bool
+    public let viewId: String
+    public let actionType: TextActionType
+    public let text: String?
+    public let finalValue: String?
+    public let message: String
+
+    public init(success: Bool, viewId: String, actionType: TextActionType, text: String? = nil, finalValue: String? = nil, message: String) {
+        self.success = success
+        self.viewId = viewId
+        self.actionType = actionType
+        self.text = text
+        self.finalValue = finalValue
+        self.message = message
+    }
+
+    public enum TextActionType: String, Sendable {
+        case type, setText, appendText, clearText
+    }
+}
+
+/// Result of focus action (focus, blur, focusNext, focusPrevious)
+public struct AwareFocusResult: Sendable {
+    public let success: Bool
+    public let focusedViewId: String?
+    public let actionType: FocusActionType
+    public let message: String
+
+    public init(success: Bool, focusedViewId: String? = nil, actionType: FocusActionType, message: String) {
+        self.success = success
+        self.focusedViewId = focusedViewId
+        self.actionType = actionType
+        self.message = message
+    }
+
+    public enum FocusActionType: String, Sendable {
+        case focus, blur, focusNext, focusPrevious
+    }
+}
+
+/// Result of find query
+public struct AwareFindResult: Sendable {
+    public let success: Bool
+    public let matches: [String]
+    public let query: String
+    public let message: String
+
+    public init(success: Bool, matches: [String], query: String, message: String) {
+        self.success = success
+        self.matches = matches
+        self.query = query
+        self.message = message
+    }
+}
+
+/// Result of navigation action (goBack, dismiss)
+public struct AwareNavigationResult: Sendable {
+    public let success: Bool
+    public let actionType: NavigationActionType
+    public let message: String
+
+    public init(success: Bool, actionType: NavigationActionType, message: String) {
+        self.success = success
+        self.actionType = actionType
+        self.message = message
+    }
+
+    public enum NavigationActionType: String, Sendable {
+        case goBack, dismiss
+    }
+}
