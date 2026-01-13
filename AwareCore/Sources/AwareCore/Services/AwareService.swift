@@ -797,8 +797,8 @@ public final class Aware: ObservableObject {
 
     // MARK: - Snapshot Generation
 
-    /// Generate full UI snapshot
-    public func captureSnapshot(format: AwareSnapshotFormat = .text, includeHidden: Bool = false, maxDepth: Int = 10, compression: CompressionStrategy = .basic) -> AwareSnapshotResult {
+    /// Generate full UI snapshot (defaults to .compact for LLM optimization)
+    public func captureSnapshot(format: AwareSnapshotFormat = .compact, includeHidden: Bool = false, maxDepth: Int = 10, compression: CompressionStrategy = .basic) -> AwareSnapshotResult {
         // Input validation
         guard maxDepth > 0 && maxDepth <= 50 else {
             AwareError.invalidConfiguration(reason: "Invalid maxDepth: \(maxDepth) (must be 1-50)", key: "maxDepth").log()
@@ -854,6 +854,28 @@ public final class Aware: ObservableObject {
             content: content,
             viewCount: visibleViews.count
         )
+    }
+
+    // MARK: - Snapshot Convenience Methods
+
+    /// Get compact snapshot (LLM-optimized, ~100-120 tokens)
+    public func snapshotCompact(includeHidden: Bool = false, maxDepth: Int = 10, compression: CompressionStrategy = .basic) -> AwareSnapshotResult {
+        captureSnapshot(format: .compact, includeHidden: includeHidden, maxDepth: maxDepth, compression: compression)
+    }
+
+    /// Alias for snapshotCompact - semantic clarity for LLM testing contexts
+    public func snapshotForLLM(includeHidden: Bool = false, maxDepth: Int = 10, compression: CompressionStrategy = .basic) -> AwareSnapshotResult {
+        snapshotCompact(includeHidden: includeHidden, maxDepth: maxDepth, compression: compression)
+    }
+
+    /// Get human-readable snapshot (text format, ~200-300 tokens)
+    public func snapshotHumanReadable(includeHidden: Bool = false, maxDepth: Int = 10, compression: CompressionStrategy = .basic) -> AwareSnapshotResult {
+        captureSnapshot(format: .text, includeHidden: includeHidden, maxDepth: maxDepth, compression: compression)
+    }
+
+    /// Alias for snapshotHumanReadable - semantic clarity for debugging
+    public func snapshotForDebug(includeHidden: Bool = false, maxDepth: Int = 10, compression: CompressionStrategy = .basic) -> AwareSnapshotResult {
+        snapshotHumanReadable(includeHidden: includeHidden, maxDepth: maxDepth, compression: compression)
     }
 
     /// Query specific view by ID
@@ -1076,7 +1098,7 @@ public final class Aware: ObservableObject {
         AwareFocusManager.shared.blur()
         return AwareTapResult(
             success: true,
-            viewId: previousFocus,
+            viewId: previousFocus ?? "",
             message: "Blurred focus"
         )
     }
@@ -1087,7 +1109,7 @@ public final class Aware: ObservableObject {
         let success = AwareFocusManager.shared.focusNext()
         return AwareTapResult(
             success: success,
-            viewId: AwareFocusManager.shared.focusedViewId,
+            viewId: AwareFocusManager.shared.focusedViewId ?? "",
             message: success ? "Focused next field" : "No next field to focus"
         )
     }
@@ -1098,7 +1120,7 @@ public final class Aware: ObservableObject {
         let success = AwareFocusManager.shared.focusPrevious()
         return AwareTapResult(
             success: success,
-            viewId: AwareFocusManager.shared.focusedViewId,
+            viewId: AwareFocusManager.shared.focusedViewId ?? "",
             message: success ? "Focused previous field" : "No previous field to focus"
         )
     }
@@ -1111,7 +1133,7 @@ public final class Aware: ObservableObject {
         let success = await AwareNavigationManager.shared.goBack()
         return AwareTapResult(
             success: success,
-            viewId: AwareNavigationManager.shared.currentContext,
+            viewId: AwareNavigationManager.shared.currentContext ?? "",
             message: success ? "Navigated back" : "Could not navigate back"
         )
     }
@@ -1122,7 +1144,7 @@ public final class Aware: ObservableObject {
         let success = await AwareNavigationManager.shared.dismiss()
         return AwareTapResult(
             success: success,
-            viewId: AwareNavigationManager.shared.currentContext,
+            viewId: AwareNavigationManager.shared.currentContext ?? "",
             message: success ? "Dismissed modal" : "Could not dismiss"
         )
     }

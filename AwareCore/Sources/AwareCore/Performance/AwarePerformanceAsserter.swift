@@ -120,8 +120,18 @@ public class AwarePerformanceAsserter {
         _ action: () async throws -> Void,
         budget: PerformanceBudget
     ) async -> PerformanceAssertionResult {
-        let metrics = await AwarePerformanceMonitor.shared.measureAction(action)
-        return await assertWithinBudget(metrics, budget: budget)
+        do {
+            let metrics = try await AwarePerformanceMonitor.shared.measureAction(action)
+            return await assertWithinBudget(metrics, budget: budget)
+        } catch {
+            return PerformanceAssertionResult(
+                passed: false,
+                actualMs: 0,
+                budgetMs: budget.actionMs,
+                overrunMs: nil,
+                message: "Action threw error: \(error.localizedDescription)"
+            )
+        }
     }
 
     /// Assert query performance within budget

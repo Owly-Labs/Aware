@@ -419,6 +419,16 @@ public struct AwareAssertionResult: Sendable {
         self.message = message
     }
 
+    /// Convenience initializer for simple assertions without viewId/key tracking
+    public init(passed: Bool, message: String) {
+        self.passed = passed
+        self.viewId = ""
+        self.key = ""
+        self.expected = nil
+        self.actual = nil
+        self.message = message
+    }
+
     public var emoji: String { passed ? "✅" : "❌" }
 
     public var description: String { "\(emoji) \(message)" }
@@ -476,7 +486,7 @@ public struct AwareTapResult: Sendable {
     public let duration: TimeInterval?
     public let actionDescription: String?
 
-    public init(success: Bool, viewId: String, actionType: TapActionType, message: String, duration: TimeInterval? = nil, actionDescription: String? = nil) {
+    public init(success: Bool, viewId: String, actionType: TapActionType = .tap, message: String, duration: TimeInterval? = nil, actionDescription: String? = nil) {
         self.success = success
         self.viewId = viewId
         self.actionType = actionType

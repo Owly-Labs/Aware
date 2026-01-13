@@ -27,11 +27,7 @@ extension View {
             .awareMetadata(
                 id,
                 description: "Loading state: \(message ?? "Loading")",
-                type: .query,
-                metadata: [
-                    "isLoading": "\(isLoading)",
-                    "hasProgress": "\(progress != nil)"
-                ]
+                type: .unknown,
             )
     }
 }
@@ -52,12 +48,8 @@ extension View {
             .awareMetadata(
                 id,
                 description: error != nil ? "Error: \(error!.localizedDescription)" : "No error",
-                type: .query,
+                type: .unknown,
                 isDestructive: false,
-                metadata: [
-                    "canRetry": "\(canRetry)",
-                    "errorType": error != nil ? String(describing: type(of: error!)) : ""
-                ]
             )
     }
 }
@@ -84,10 +76,6 @@ extension View {
                 id,
                 description: isProcessing ? "Processing: \(step ?? "In progress")" : "Not processing",
                 type: .mutation,
-                metadata: [
-                    "isProcessing": "\(isProcessing)",
-                    "hasProgress": "\(progress != nil)"
-                ]
             )
     }
 }
@@ -111,12 +99,7 @@ extension View {
             .awareMetadata(
                 id,
                 description: isValid ? "Valid" : "Invalid: \(errors.joined(separator: ", "))",
-                type: .query,
-                metadata: [
-                    "isValid": "\(isValid)",
-                    "hasErrors": "\(!errors.isEmpty)",
-                    "hasWarnings": "\(!warnings.isEmpty)"
-                ]
+                type: .unknown,
             )
     }
 }
@@ -141,11 +124,6 @@ extension View {
                 id,
                 description: "Network: \(isConnected ? "Connected" : "Disconnected")",
                 type: .network,
-                metadata: [
-                    "isConnected": "\(isConnected)",
-                    "isLoading": "\(isLoading)",
-                    "hasError": "\(error != nil)"
-                ]
             )
     }
 }
@@ -168,11 +146,7 @@ extension View {
             .awareMetadata(
                 id,
                 description: "\(selectedItems.count) of \(totalItems) selected",
-                type: .query,
-                metadata: [
-                    "allowsMultiple": "\(allowsMultipleSelection)",
-                    "selectionPercent": "\(totalItems > 0 ? Int((Double(selectedItems.count) / Double(totalItems)) * 100) : 0)"
-                ]
+                type: .unknown,
             )
     }
 }
@@ -194,11 +168,7 @@ extension View {
             .awareMetadata(
                 id,
                 description: isEmpty ? message : "Has content",
-                type: .query,
-                metadata: [
-                    "isEmpty": "\(isEmpty)",
-                    "canAddItems": "\(canAddItems)"
-                ]
+                type: .unknown,
             )
     }
 }
@@ -220,11 +190,7 @@ extension View {
             .awareMetadata(
                 id,
                 description: isAuthenticated ? "Authenticated as \(username ?? "user")" : "Not authenticated",
-                type: .query,
-                metadata: [
-                    "isAuthenticated": "\(isAuthenticated)",
-                    "requiresReauth": "\(requiresReauth)"
-                ]
+                type: .unknown,
             )
     }
 }
@@ -297,7 +263,8 @@ extension View {
         isFocused: Binding<Bool>? = nil
     ) -> some View {
         self
-            .awareTextField(id, text: text, label: label, isFocused: isFocused ?? .constant(false))
+            .aware(id, label: label)
+            .awareState(id, key: "value", value: text.wrappedValue)
             .awareState(id, key: "placeholder", value: placeholder ?? "")
             .awareState(id, key: "isEnabled", value: isEnabled)
             .awareState(id, key: "characterCount", value: "\(text.wrappedValue.count)")
@@ -361,12 +328,7 @@ extension View {
             .awareMetadata(
                 id,
                 description: "Toolbar: \(isVisible ? "Visible" : "Hidden"), \(itemCount) items",
-                type: .query,
-                metadata: [
-                    "isVisible": "\(isVisible)",
-                    "hasSelection": "\(selectedItem != nil)",
-                    "isCustomizable": "\(isCustomizable)"
-                ]
+                type: .unknown,
             )
     }
 }
@@ -390,12 +352,7 @@ extension View {
             .awareMetadata(
                 id,
                 description: "Sidebar: \(isExpanded ? "Expanded" : "Collapsed"), \(itemCount) items",
-                type: .query,
-                metadata: [
-                    "isExpanded": "\(isExpanded)",
-                    "hasSelection": "\(selectedItem != nil)",
-                    "canCollapse": "\(canCollapse)"
-                ]
+                type: .unknown,
             )
     }
 }
@@ -419,12 +376,7 @@ extension View {
             .awareMetadata(
                 id,
                 description: isCollapsed ? "Split view collapsed" : "Split view: divider at \(Int(dividerPosition))",
-                type: .query,
-                metadata: [
-                    "isCollapsed": "\(isCollapsed)",
-                    "dividerPosition": "\(dividerPosition)",
-                    "hasConstraints": "\(minimumWidth != nil || maximumWidth != nil)"
-                ]
+                type: .unknown,
             )
     }
 }
@@ -450,13 +402,7 @@ extension View {
             .awareMetadata(
                 id,
                 description: "Window: '\(title)' \(isFullScreen ? "(fullscreen)" : "")\(isKeyWindow ? " (key)" : "")",
-                type: .query,
-                metadata: [
-                    "isFullScreen": "\(isFullScreen)",
-                    "isKeyWindow": "\(isKeyWindow)",
-                    "isMinimized": "\(isMinimized)",
-                    "isResizable": "\(isResizable)"
-                ]
+                type: .unknown,
             )
     }
 }
