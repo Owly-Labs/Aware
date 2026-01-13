@@ -154,15 +154,15 @@ extension Aware {
     @MainActor
     public func typeText(text: String, in viewId: String? = nil) async -> AwareTextResult {
         // Type the text (uses platform-specific implementation)
-        let success = await self.type(text, in: viewId)
+        let result = await self.type(text, in: viewId)
 
         return AwareTextResult(
-            success: success,
+            success: result.success,
             viewId: viewId ?? "",
             actionType: .type,
             text: text,
             finalValue: viewId != nil ? getText(viewId!) : nil,
-            message: success ? "Typed '\(text)'" : "Failed to type text"
+            message: result.message
         )
     }
 
@@ -294,13 +294,15 @@ extension Aware {
 
         switch matchType {
         case .idContains:
-            matches = viewRegistry.keys.filter { $0.contains(query) }.sorted()
+            matches = registeredViewIds.filter { $0.contains(query) }
         case .idExact:
-            matches = viewRegistry.keys.filter { $0 == query }.sorted()
+            matches = registeredViewIds.filter { $0 == query }
         case .label:
-            matches = viewRegistry.filter { $0.value.label?.contains(query) == true }.map { $0.key }.sorted()
+            matches = registeredViewIds.filter { id in
+                describeView(id)?.label?.contains(query) == true
+            }
         case .tappable:
-            matches = Array(actionCallbacks.keys).sorted()
+            matches = listRegisteredActions().sorted()
         case .focused:
             if let focused = AwareFocusManager.shared.focusedViewId {
                 matches = [focused]
@@ -342,7 +344,7 @@ extension Aware {
     /// - Returns: Assertion result
     @MainActor
     public func assertExists(viewId: String) async -> AwareAssertionResult {
-        let exists = viewRegistry[viewId] != nil
+        let exists = registeredViewIds.contains(viewId)
         return AwareAssertionResult(
             passed: exists,
             viewId: viewId,
@@ -362,7 +364,7 @@ extension Aware {
     /// - Returns: Assertion result
     @MainActor
     public func assertVisible(viewId: String) async -> AwareAssertionResult {
-        guard let snapshot = viewRegistry[viewId] else {
+        guard let viewDescription = describeView(viewId) else {
             return AwareAssertionResult(
                 passed: false,
                 viewId: viewId,
@@ -374,12 +376,12 @@ extension Aware {
         }
 
         return AwareAssertionResult(
-            passed: snapshot.isVisible,
+            passed: viewDescription.isVisible,
             viewId: viewId,
             key: "visible",
             expected: "true",
-            actual: "\(snapshot.isVisible)",
-            message: snapshot.isVisible ? "View '\(viewId)' is visible" : "View '\(viewId)' is hidden"
+            actual: "\(viewDescription.isVisible)",
+            message: viewDescription.isVisible ? "View '\(viewId)' is visible" : "View '\(viewId)' is hidden"
         )
     }
 
@@ -395,7 +397,7 @@ extension Aware {
     /// - Returns: Assertion result with actual value
     @MainActor
     public func assertState(viewId: String, key: String, equals expected: String) async -> AwareAssertionResult {
-        let actual = getState(viewId, key: key)
+        let actual = getStateValue(viewId, key: key)
         let passed = actual == expected
 
         return AwareAssertionResult(
@@ -419,7 +421,7 @@ extension Aware {
     /// - Returns: Assertion result
     @MainActor
     public func assertViewCount(_ expected: Int) async -> AwareAssertionResult {
-        let actual = viewRegistry.count
+        let actual = registeredViewIds.count
         let passed = actual == expected
 
         return AwareAssertionResult(
