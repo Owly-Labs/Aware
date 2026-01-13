@@ -39,9 +39,10 @@ This repository contains multiple independent packages:
 | **AwareiOS** | v2.1.0 | iOS 17+ | iOS-specific implementation with direct action callbacks |
 | **AwareMacOS** | v2.0.3 | macOS 14+ | macOS-specific implementation with CGEvent simulation |
 | **AwareBackendClient** | v1.0.0 | Cross-platform | HTTP client for BackendAware REST API |
+| **AwareBridge** | v1.0.0 | Cross-platform | WebSocket IPC for real-time communication (<5ms) |
 | **Aware** | v2.0.0 | Umbrella | Backward-compatible re-export facade |
 
-**Future packages:** AwareWeb (TypeScript), AwareBackendSDK (Python/Node), AwareBridge (WebSocket IPC)
+**Future packages:** AwareWeb (TypeScript), AwareBackendSDK (Python/Node)
 
 **Key Benefit:** Upgrade iOS without affecting macOS. Each platform versions independently.
 
@@ -186,6 +187,81 @@ if regression != nil {
     print("⚠️ UI changed unexpectedly!")
 }
 ```
+
+## WebSocket IPC (Real-Time Communication)
+
+AwareBridge provides WebSocket-based IPC for real-time communication between Breathe IDE and your apps, replacing file-based polling (50ms) with true real-time updates (<5ms).
+
+### Usage
+
+```swift
+import AwareBridge
+
+// Start WebSocket server (localhost:9999)
+try await WebSocketBridge.shared.start()
+
+// Register command handler
+WebSocketBridge.shared.onCommand { command in
+    // Handle MCP commands from Breathe IDE
+    switch command.action {
+    case .snapshot:
+        let snapshot = await Aware.shared.snapshot(format: .compact)
+        return MCPResult.success(commandId: command.id, data: ["snapshot": snapshot])
+    case .tap:
+        let success = await Aware.shared.executeAction(command.parameters?["viewId"] ?? "")
+        return MCPResult.success(commandId: command.id, data: ["success": "\(success)"])
+    default:
+        return MCPResult.failure(commandId: command.id, error: .actionFailed)
+    }
+}
+
+// Broadcast events to all connected clients
+await WebSocketBridge.shared.sendEvent(MCPEvent(type: .ready))
+```
+
+### MCP Protocol
+
+The Model Context Protocol (MCP) enables LLM-driven UI testing:
+
+```json
+// Command from Breathe IDE
+{
+  "id": "cmd-123",
+  "action": "tap",
+  "parameters": {"viewId": "login-btn"}
+}
+
+// Result back to Breathe IDE
+{
+  "commandId": "cmd-123",
+  "success": true,
+  "data": {"status": "executed"}
+}
+```
+
+### Breathe IDE Adapter
+
+High-level API for Breathe IDE integration:
+
+```swift
+let adapter = BreatheMCPAdapter.shared
+try await adapter.start()
+
+// MCP tool implementations
+let snapshot = await adapter.snapshot(format: .compact)
+let success = await adapter.action(type: "tap", viewId: "login-btn")
+let elements = await adapter.find(label: "Login")
+let ready = await adapter.wait(viewId: "dashboard", stateKey: "loaded", expectedValue: "true")
+```
+
+### Performance
+
+| IPC Method | Latency | Use Case |
+|------------|---------|----------|
+| **WebSocket** | **<5ms** | **Real-time LLM testing** (preferred) |
+| File Polling | ~50ms | Legacy compatibility (automatic fallback) |
+
+**Auto-Detection:** AwareiOS automatically detects WebSocket availability and falls back to file-based IPC if needed.
 
 ## Breathe Integration
 
