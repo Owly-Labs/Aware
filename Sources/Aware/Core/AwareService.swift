@@ -1319,6 +1319,103 @@ public final class Aware: ObservableObject {
         }
     }
 
+    // MARK: - iOS-Specific Assertions (AetherSing Contribution)
+
+    #if os(iOS)
+    /// Assert that a text field is focused
+    public func assertFocused(_ viewId: String) -> AwareAssertionResult {
+        let result = assertState(viewId, key: "isFocused", equals: "true")
+        return AwareAssertionResult(
+            passed: result.passed,
+            message: result.passed ? "View '\(viewId)' is focused" : "View '\(viewId)' is not focused"
+        )
+    }
+
+    /// Assert that a text field is not focused
+    public func assertNotFocused(_ viewId: String) -> AwareAssertionResult {
+        let result = assertState(viewId, key: "isFocused", equals: "false")
+        return AwareAssertionResult(
+            passed: result.passed,
+            message: result.passed ? "View '\(viewId)' is not focused" : "View '\(viewId)' is focused"
+        )
+    }
+
+    /// Assert that a toggle is on
+    public func assertToggleOn(_ viewId: String) -> AwareAssertionResult {
+        let result = assertState(viewId, key: "isOn", equals: "true")
+        return AwareAssertionResult(
+            passed: result.passed,
+            message: result.passed ? "Toggle '\(viewId)' is on" : "Toggle '\(viewId)' is off"
+        )
+    }
+
+    /// Assert that a toggle is off
+    public func assertToggleOff(_ viewId: String) -> AwareAssertionResult {
+        let result = assertState(viewId, key: "isOn", equals: "false")
+        return AwareAssertionResult(
+            passed: result.passed,
+            message: result.passed ? "Toggle '\(viewId)' is off" : "Toggle '\(viewId)' is on"
+        )
+    }
+
+    /// Assert that a text field is empty
+    public func assertTextFieldEmpty(_ viewId: String) -> AwareAssertionResult {
+        let result = assertState(viewId, key: "isEmpty", equals: "true")
+        return AwareAssertionResult(
+            passed: result.passed,
+            message: result.passed ? "Text field '\(viewId)' is empty" : "Text field '\(viewId)' is not empty"
+        )
+    }
+
+    /// Assert that a text field is not empty
+    public func assertTextFieldNotEmpty(_ viewId: String) -> AwareAssertionResult {
+        let result = assertState(viewId, key: "isEmpty", equals: "false")
+        return AwareAssertionResult(
+            passed: result.passed,
+            message: result.passed ? "Text field '\(viewId)' is not empty" : "Text field '\(viewId)' is empty"
+        )
+    }
+
+    /// Assert that a slider has a specific value within tolerance
+    public func assertSliderValue(_ viewId: String, expected: Double, tolerance: Double = 0.01) -> AwareAssertionResult {
+        guard let stateString = getStateValue(viewId, key: "value"),
+              let actual = Double(stateString) else {
+            return AwareAssertionResult(passed: false, message: "Slider '\(viewId)' has no valid value")
+        }
+
+        let lowerBound = expected - tolerance
+        let upperBound = expected + tolerance
+
+        if actual >= lowerBound && actual <= upperBound {
+            return AwareAssertionResult(passed: true, message: "Slider '\(viewId)' value \(actual) is within tolerance of \(expected)")
+        } else {
+            return AwareAssertionResult(passed: false, message: "Slider '\(viewId)' value \(actual) is not within tolerance of \(expected)")
+        }
+    }
+
+    /// Assert that a picker has a specific selection
+    public func assertPickerSelection(_ viewId: String, expected: String) -> AwareAssertionResult {
+        return assertState(viewId, key: "selection", equals: expected)
+    }
+
+    /// Assert that a picker has a specific selected index
+    public func assertPickerIndex(_ viewId: String, expected: Int) -> AwareAssertionResult {
+        return assertState(viewId, key: "selectedIndex", equals: String(expected))
+    }
+
+    /// Assert iOS navigation tabs are present and visible
+    public func assertNavigationTabsPresent() -> AwareAssertionResult {
+        let tabIds = ["tabButton-sing", "tabButton-discover", "tabButton-library", "tabButton-you"]
+        for tabId in tabIds {
+            let result = assertExists(tabId)
+            if !result.passed {
+                return AwareAssertionResult(passed: false, message: "Navigation tab '\(tabId)' is missing")
+            }
+        }
+        return AwareAssertionResult(passed: true, message: "All navigation tabs are present")
+    }
+    #endif
+
     // MARK: - Diff Tracking
 
     /// Capture current state for later comparison

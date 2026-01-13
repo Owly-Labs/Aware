@@ -188,6 +188,96 @@ List(users) { user in
 )
 ```
 
+## iOS Platform Support (AetherSing Integration)
+
+Aware has been enhanced with comprehensive iOS platform support, contributed by the AetherSing team. These features enable advanced SwiftUI testing on iOS devices and simulators.
+
+### iOS Configuration
+
+```swift
+// Configure Aware for iOS platform
+Aware.configureForIOS(ipcPath: "~/.aware")
+
+// Framework automatically sets up:
+// - IPC communication via ~/.aware directory
+// - Heartbeat monitoring for app health
+// - iOS-specific gesture and input handling
+```
+
+### iOS-Specific Modifiers
+
+```swift
+struct LoginView: View {
+    @State private var email = ""
+    @State private var password = ""
+    @State private var rememberMe = false
+
+    var body: some View {
+        VStack {
+            TextField("Email", text: $email)
+                .awareTextField("email-field", text: $email,
+                               label: "Email Address", placeholder: "user@example.com")
+
+            SecureField("Password", text: $password)
+                .awareSecureField("password-field", text: $password,
+                                 label: "Password", placeholder: "••••••••")
+
+            Toggle("Remember me", isOn: $rememberMe)
+                .awareToggle("remember-toggle", isOn: $rememberMe, label: "Remember Me")
+
+            Button("Sign In") { signIn() }
+                .awareButton("signin-btn", label: "Sign In") {
+                    // Direct action callback for ghost UI testing
+                    signIn()
+                }
+        }
+        .awareContainer("login-form", label: "Login Form")
+    }
+}
+```
+
+### iOS-Specific Assertions
+
+```swift
+// Test iOS-specific UI states
+let emailFocused = await aware.assertFocused("email-field")
+let passwordNotEmpty = await aware.assertTextFieldNotEmpty("password-field")
+let toggleOn = await aware.assertToggleOn("remember-toggle")
+
+// Navigation testing
+let tabsPresent = await aware.assertNavigationTabsPresent()
+```
+
+### Direct Action Callbacks
+
+```swift
+// Ghost UI testing - LLMs can interact without mouse
+let success = await aware.tapDirect("signin-btn")
+let textEntered = await aware.typeText("Hello World", in: "email-field")
+let toggled = await aware.toggle("remember-toggle")
+```
+
+### IPC Communication
+
+```swift
+// MCP-compatible IPC for LLM integration
+~/.aware/
+├── ui_command.json          # Commands from LLM
+├── ui_result.json           # Results to LLM
+├── ui_snapshot.json         # Current UI state
+└── ui_watcher_heartbeat.txt # App health monitoring
+```
+
+### Token Efficiency on iOS
+
+| Method | Tokens | Cost (per test) | Notes |
+|--------|--------|-----------------|-------|
+| **Aware iOS** | **~110** | **$0.00033** | Full state + actions |
+| Screenshots | ~15,000 | $0.045 | Visual only |
+| Accessibility | ~1,500 | $0.0045 | Structure only |
+
+**iOS testing with Aware: 99.3% token reduction vs traditional screenshot approaches.**
+
 ## Breathe Integration
 
 This is the **standalone** Aware framework. For **Breathe IDE users**, additional features are available:

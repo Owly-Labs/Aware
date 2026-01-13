@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import Aware
 
 // MARK: - Test Suite
 
@@ -280,6 +281,8 @@ public class AwareTestRunner: ObservableObject {
             return AssertionResult(
                 type: "visible",
                 passed: result.passed,
+                expected: nil,
+                actual: nil,
                 message: result.message
             )
 
@@ -288,6 +291,8 @@ public class AwareTestRunner: ObservableObject {
             return AssertionResult(
                 type: "exists",
                 passed: result.passed,
+                expected: nil,
+                actual: nil,
                 message: result.message
             )
 
@@ -306,6 +311,8 @@ public class AwareTestRunner: ObservableObject {
             return AssertionResult(
                 type: "textContains",
                 passed: result.passed,
+                expected: substring,
+                actual: nil,
                 message: result.message
             )
 
@@ -314,6 +321,8 @@ public class AwareTestRunner: ObservableObject {
             return AssertionResult(
                 type: "noStaleness",
                 passed: result.passed,
+                expected: nil,
+                actual: nil,
                 message: result.message
             )
 
@@ -332,6 +341,8 @@ public class AwareTestRunner: ObservableObject {
             return AssertionResult(
                 type: "tappable",
                 passed: hasTap,
+                expected: nil,
+                actual: nil,
                 message: hasTap ? "'\(viewId)' is tappable" : "'\(viewId)' has no action callback"
             )
         }
