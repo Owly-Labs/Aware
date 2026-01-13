@@ -2,6 +2,8 @@
 
 SwiftUI instrumentation framework for LLM-driven UI testing.
 
+> ⚠️ **Development Beta (v2.2.0-beta)**: This is an active development release. APIs and features are subject to change. Not recommended for production use yet.
+
 ## Core Philosophy
 - **Ghost UI**: LLM tests without moving mouse
 - **80% Token Reduction**: 100-120 tokens vs 500-600 for screenshots
@@ -14,12 +16,12 @@ Aware is now organized as a modular monorepo with independent package versioning
 
 | Package | Version | Platform | Purpose |
 |---------|---------|----------|---------|
-| **AwareCore** | v1.5.0 | Swift | Platform-agnostic foundation (types, protocols, testing) |
-| **AwareiOS** | v2.2.0 | iOS 17+ | iOS with UIViewID enum, .ui*() modifiers, typeText support |
-| **AwareMacOS** | v2.0.3 | macOS 14+ | macOS-specific implementation with CGEvent simulation |
-| **AwareBackendClient** | v1.0.0 | Cross-platform | HTTP client for BackendAware REST API |
-| **AwareBridge** | v1.0.0 | Cross-platform | WebSocket IPC for real-time communication (<5ms) |
-| **Aware** | v2.0.0 | Umbrella | Backward-compatible re-export facade |
+| **AwareCore** | v1.5.0-beta | Swift | Platform-agnostic foundation (types, protocols, testing) |
+| **AwareiOS** | v2.2.0-beta | iOS 17+ | iOS with UIViewID enum, .ui*() modifiers, typeText support |
+| **AwareMacOS** | v2.0.3-beta | macOS 14+ | macOS-specific implementation with CGEvent simulation |
+| **AwareBackendClient** | v1.0.0-beta | Cross-platform | HTTP client for BackendAware REST API |
+| **AwareBridge** | v1.0.0-beta | Cross-platform | WebSocket IPC for real-time communication (<5ms) |
+| **Aware** | v2.0.0-beta | Umbrella | Backward-compatible re-export facade |
 
 ### Importing Packages
 
@@ -50,7 +52,7 @@ Each package versions independently:
 **Umbrella package (recommended):**
 ```swift
 dependencies: [
-    .package(url: "https://github.com/adrian-mei/Aware", from: "2.0.0")
+    .package(url: "https://github.com/adrian-mei/Aware", from: "2.2.0-beta")
 ]
 
 // In your target
@@ -63,7 +65,7 @@ dependencies: [
 **Specific packages:**
 ```swift
 dependencies: [
-    .package(url: "https://github.com/adrian-mei/Aware", from: "2.0.0")
+    .package(url: "https://github.com/adrian-mei/Aware", from: "2.2.0-beta")
 ]
 
 // In your target
@@ -923,6 +925,6 @@ MIT License - see LICENSE file for details.
 
 ---
 
-**Version**: 2.0.0
-**Last Updated**: 2026-01-12
+**Version**: 2.2.0-beta
+**Last Updated**: 2026-01-13
 **Minimum Requirements**: iOS 17+, macOS 14+
