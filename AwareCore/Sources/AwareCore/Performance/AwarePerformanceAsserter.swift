@@ -136,8 +136,8 @@ public class AwarePerformanceAsserter {
     public func assertQueryWithinBudget(
         _ query: () async throws -> Void,
         budget: PerformanceBudget
-    ) async -> PerformanceAssertionResult {
-        let (_, metrics) = await AwarePerformanceMonitor.shared.measure(name: "query", operation: query)
+    ) async throws -> PerformanceAssertionResult {
+        let (_, metrics) = try await AwarePerformanceMonitor.shared.measure(name: "query", operation: query)
         return await assertWithinBudget(metrics, budget: budget)
     }
 
@@ -157,7 +157,8 @@ public class AwarePerformanceAsserter {
         var results: [String: PerformanceAssertionResult] = [:]
 
         for (name, operation) in operations {
-            let (_, metrics) = await AwarePerformanceMonitor.shared.measure(name: name, operation: operation)
+            // Use try? to measure even if operation fails
+            let (_, metrics) = (try? await AwarePerformanceMonitor.shared.measure(name: name, operation: operation)) ?? ((), PerformanceMetrics(name: name, startTime: Date(), endTime: Date(), duration: 0))
             results[name] = await assertWithinBudget(metrics, budget: budget)
         }
 

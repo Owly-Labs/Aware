@@ -26,6 +26,7 @@ public final class AwareMacOSPlatform: AwarePlatform {
 
     private var actionCallbacks: [String: @Sendable @MainActor () async -> Void] = [:]
     private var gestureCallbacks: [String: [String: () async -> Void]] = [:]
+    private var textBindings: [String: Binding<String>] = [:] // NEW: Text binding registry for Ghost UI
     private var isConfigured = false
 
     private init() {
@@ -90,6 +91,44 @@ public final class AwareMacOSPlatform: AwarePlatform {
         #endif
     }
 
+    // MARK: - Text Binding Registry (Ghost UI Enhancement)
+
+    /// Register a text binding for direct text input without CGEvents
+    /// Enables instant, reliable text entry for instrumented views
+    public func registerTextBinding(_ viewId: String, binding: Binding<String>) {
+        textBindings[viewId] = binding
+
+        #if DEBUG
+        print("AwareMacOS: Registered text binding for view: \(viewId)")
+        #endif
+    }
+
+    /// Type text into a view using binding (fast) or CGEvent (fallback)
+    /// - Parameters:
+    ///   - viewId: Target view identifier
+    ///   - text: Text to type
+    /// - Returns: Success status
+    public func typeText(_ viewId: String, text: String) async -> Bool {
+        // Try binding first (fast path <1ms)
+        if let binding = textBindings[viewId] {
+            binding.wrappedValue = text
+
+            #if DEBUG
+            print("AwareMacOS: Typed '\(text)' via binding (fast path)")
+            #endif
+
+            return true
+        }
+
+        // Fallback to CGEvent (slow path ~50ms)
+        #if DEBUG
+        print("AwareMacOS: No binding found, falling back to CGEvent (slow path)")
+        #endif
+
+        await AwareMacOSInput.type(text)
+        return true
+    }
+
     // MARK: - Input Simulation
 
     /// Simulate input command using CGEvents
@@ -135,8 +174,11 @@ public final class AwareMacOSPlatform: AwarePlatform {
 
         case .type:
             if let text = command.parameters["text"] {
-                await AwareMacOSInput.type(text)
-                return AwareInputResult(success: true, message: "Typed \(text.count) characters")
+                let success = await typeText(command.target, text: text)
+                return AwareInputResult(
+                    success: success,
+                    message: "Typed \(text.count) characters to '\(command.target)'"
+                )
             }
 
             return AwareInputResult(success: false, message: "Missing text parameter")
