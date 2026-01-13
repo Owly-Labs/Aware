@@ -108,3 +108,29 @@ iOSInjectionProject/
 # Documentation
 docs/
 .jazzy.yaml
+
+# Monorepo - each package has own .build/
+AwareCore/.build/
+AwareiOS/.build/
+AwareMacOS/.build/
+AwareWeb/node_modules/
+AwareWeb/dist/
+AwareBackendSDK/typescript/node_modules/
+AwareBackendSDK/typescript/dist/
+AwareBackendSDK/python/__pycache__/
+AwareBackendSDK/python/.pytest_cache/
+AwareBackendSDK/python/dist/
+AwareBackendClient/swift/.build/
+AwareBackendClient/typescript/node_modules/
+AwareBackendClient/typescript/dist/
+AwareBridge/.build/
+
+# Package lock files (monorepo)
+AwareWeb/package-lock.json
+AwareBackendSDK/typescript/package-lock.json
+AwareBackendClient/typescript/package-lock.json
+
+# Python virtual environments
+AwareBackendSDK/python/venv/
+AwareBackendSDK/python/.venv/
+AwareBackendSDK/python/*.egg-info/

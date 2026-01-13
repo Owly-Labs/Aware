@@ -1,10 +1,14 @@
-# Aware
+# Aware - Universal Instrumentation Framework
 
-**SwiftUI instrumentation framework for LLM-driven UI testing**
+**Cross-platform instrumentation for LLM-driven development**
 
 [![Swift Version](https://img.shields.io/badge/Swift-5.9+-orange.svg)](https://swift.org)
-[![Platform](https://img.shields.io/badge/Platform-iOS%2017%2B%20%7C%20macOS%2014%2B-blue.svg)](https://developer.apple.com)
+[![Platform](https://img.shields.io/badge/Platform-iOS%20%7C%20macOS%20%7C%20Web%20%7C%20Backend-blue.svg)](https://developer.apple.com)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+> **Repository:** [github.com/adrian-mei/AetherCore](https://github.com/adrian-mei/AetherCore) (will be renamed to "Aware")
+>
+> **Monorepo Structure:** Independent packages for iOS, macOS, Web, and Backend with shared core
 
 ## Why Aware?
 
@@ -25,6 +29,22 @@ Testing UIs with LLMs is expensive and slow:
 📈 **Performance Budgeting** - Assert action speeds (lenient/standard/strict)
 🎨 **Visual Regression** - Detect unintended UI changes
 
+## Monorepo Packages
+
+This repository contains multiple independent packages:
+
+| Package | Version | Platform | Purpose |
+|---------|---------|----------|---------|
+| **AwareCore** | v1.5.0 | Swift | Platform-agnostic foundation |
+| **AwareiOS** | v2.1.0 | iOS | iOS-specific implementation |
+| **AwareMacOS** | v2.0.3 | macOS | macOS-specific implementation |
+| **AwareWeb** | v1.0.0 | TypeScript | Web frontend (React/Vue/Vanilla) |
+| **AwareBackendSDK** | v1.0.0 | Multi-language | Server instrumentation |
+| **AwareBackendClient** | v1.2.0 | Swift/TS | HTTP client for backend |
+| **AwareBridge** | v1.0.0 | Swift | Breathe IDE integration |
+
+**Key Benefit:** Upgrade iOS without affecting macOS. Each platform versions independently.
+
 ## Quick Start
 
 ### Installation
@@ -33,8 +53,20 @@ Add Aware to your Swift package dependencies:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/cogitolabs/Aware", from: "2.0.0")
+    .package(url: "https://github.com/adrian-mei/AetherCore", from: "2.1.0")
 ]
+```
+
+Or for specific platforms:
+
+```swift
+// iOS only
+.package(url: "https://github.com/adrian-mei/AetherCore", from: "2.1.0"),
+targets: [.target(name: "MyApp", dependencies: [.product(name: "AwareiOS", package: "AetherCore")])]
+
+// macOS only
+.package(url: "https://github.com/adrian-mei/AetherCore", from: "2.0.3"),
+targets: [.target(name: "MyApp", dependencies: [.product(name: "AwareMacOS", package: "AetherCore")])]
 ```
 
 ### Basic Usage
@@ -175,14 +207,38 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 
 Aware is released under the MIT License. See [LICENSE](LICENSE) for details.
 
+## Breathe Ecosystem Integration
+
+Aware is part of the unified **Breathe ecosystem** where LLM + IDE + Instrumentation work as a single unit:
+
+```
+LLM writes code
+    ↓
+Breathe IDE (orchestrator)
+    ↓ WebSocket IPC
+AwareBridge (router)
+    ├→ iOS Simulator (AwareiOS)
+    ├→ macOS App (AwareMacOS)
+    ├→ Web App (AwareWeb)
+    └→ Backend (AwareBackendSDK)
+    ↓
+Instant parallel feedback across all platforms
+```
+
+**Key Features:**
+- **SDK Discovery:** LLM automatically discovers Aware via `session_start` metadata
+- **Cross-Platform:** Write once, test everywhere (iOS, macOS, web, backend)
+- **Real-Time IPC:** <5ms latency vs 50ms file polling
+- **Intelligence:** Auto-fix suggestions from Breathe error recovery
+
 ## Links
 
-- [GitHub Repository](https://github.com/cogitolabs/Aware)
+- [GitHub Repository](https://github.com/adrian-mei/AetherCore) (will be renamed to "Aware")
 - [Documentation](CLAUDE.md)
+- [Implementation Plan](/Users/adrian/.claude/plans/peppy-weaving-panda.md) (10-week roadmap)
 - [Breathe IDE](https://breathe.cogito.cv)
-- [Issue Tracker](https://github.com/cogitolabs/Aware/issues)
 - [Cogito Labs](https://cogito.cv)
 
 ---
 
-**Save 40%+ on AI development costs. Test smarter with Aware.**
+**Save 40%+ on AI development costs. Test smarter with Aware across all platforms.**
