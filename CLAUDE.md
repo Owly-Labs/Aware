@@ -8,13 +8,72 @@ SwiftUI instrumentation framework for LLM-driven UI testing.
 - **Rich State**: Exact values, not visual appearance
 - **Staleness Detection**: Know when @State fails to update
 
+## Monorepo Architecture
+
+Aware is now organized as a modular monorepo with independent package versioning:
+
+| Package | Version | Platform | Purpose |
+|---------|---------|----------|---------|
+| **AwareCore** | v1.5.0 | Swift | Platform-agnostic foundation (types, protocols, testing) |
+| **AwareiOS** | v2.1.0 | iOS 17+ | iOS-specific implementation with direct action callbacks |
+| **AwareMacOS** | v2.0.3 | macOS 14+ | macOS-specific implementation with CGEvent simulation |
+| **AwareBackendClient** | v1.0.0 | Cross-platform | HTTP client for BackendAware REST API |
+| **Aware** | v2.0.0 | Umbrella | Backward-compatible re-export facade |
+
+### Importing Packages
+
+**Simple (recommended for most users):**
+```swift
+import Aware  // Auto-imports correct platform module
+```
+
+**Granular (for advanced use cases):**
+```swift
+import AwareCore           // Types and protocols only
+import AwareiOS            // iOS-specific features
+import AwareMacOS          // macOS-specific features
+import AwareBackendClient  // Backend HTTP client
+```
+
+### Independent Versioning
+
+Each package versions independently:
+- Upgrade iOS to v2.1.0 without affecting macOS at v2.0.3
+- Core types remain stable across platform updates
+- Backend client evolves separately from UI instrumentation
+
 ## Installation
 
 ### Swift Package Manager
+
+**Umbrella package (recommended):**
 ```swift
 dependencies: [
-    .package(url: "https://github.com/cogitolabs/Aware", from: "2.0.0")
+    .package(url: "https://github.com/adrian-mei/Aware", from: "2.0.0")
 ]
+
+// In your target
+.target(
+    name: "MyApp",
+    dependencies: ["Aware"]  // Auto-imports correct platform
+)
+```
+
+**Specific packages:**
+```swift
+dependencies: [
+    .package(url: "https://github.com/adrian-mei/Aware", from: "2.0.0")
+]
+
+// In your target
+.target(
+    name: "MyApp",
+    dependencies: [
+        .product(name: "AwareCore", package: "Aware"),
+        .product(name: "AwareiOS", package: "Aware"),
+        .product(name: "AwareBackendClient", package: "Aware")
+    ]
+)
 ```
 
 ## Quick Start

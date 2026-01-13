@@ -35,13 +35,13 @@ This repository contains multiple independent packages:
 
 | Package | Version | Platform | Purpose |
 |---------|---------|----------|---------|
-| **AwareCore** | v1.5.0 | Swift | Platform-agnostic foundation |
-| **AwareiOS** | v2.1.0 | iOS | iOS-specific implementation |
-| **AwareMacOS** | v2.0.3 | macOS | macOS-specific implementation |
-| **AwareWeb** | v1.0.0 | TypeScript | Web frontend (React/Vue/Vanilla) |
-| **AwareBackendSDK** | v1.0.0 | Multi-language | Server instrumentation |
-| **AwareBackendClient** | v1.2.0 | Swift/TS | HTTP client for backend |
-| **AwareBridge** | v1.0.0 | Swift | Breathe IDE integration |
+| **AwareCore** | v1.5.0 | Swift | Platform-agnostic foundation (types, protocols, testing) |
+| **AwareiOS** | v2.1.0 | iOS 17+ | iOS-specific implementation with direct action callbacks |
+| **AwareMacOS** | v2.0.3 | macOS 14+ | macOS-specific implementation with CGEvent simulation |
+| **AwareBackendClient** | v1.0.0 | Cross-platform | HTTP client for BackendAware REST API |
+| **Aware** | v2.0.0 | Umbrella | Backward-compatible re-export facade |
+
+**Future packages:** AwareWeb (TypeScript), AwareBackendSDK (Python/Node), AwareBridge (WebSocket IPC)
 
 **Key Benefit:** Upgrade iOS without affecting macOS. Each platform versions independently.
 
@@ -53,20 +53,24 @@ Add Aware to your Swift package dependencies:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/adrian-mei/Aware", from: "2.1.0")
+    .package(url: "https://github.com/adrian-mei/Aware", from: "2.0.0")
 ]
-```
 
-Or for specific platforms:
+// Simple (recommended) - auto-imports correct platform
+.target(
+    name: "MyApp",
+    dependencies: ["Aware"]
+)
 
-```swift
-// iOS only
-.package(url: "https://github.com/adrian-mei/Aware", from: "2.1.0"),
-targets: [.target(name: "MyApp", dependencies: [.product(name: "AwareiOS", package: "Aware")])]
-
-// macOS only
-.package(url: "https://github.com/adrian-mei/Aware", from: "2.0.3"),
-targets: [.target(name: "MyApp", dependencies: [.product(name: "AwareMacOS", package: "Aware")])]
+// Granular - import specific packages
+.target(
+    name: "MyApp",
+    dependencies: [
+        .product(name: "AwareCore", package: "Aware"),
+        .product(name: "AwareiOS", package: "Aware"),
+        .product(name: "AwareBackendClient", package: "Aware")
+    ]
+)
 ```
 
 ### Basic Usage
