@@ -15,9 +15,10 @@ Aware is now organized as a modular monorepo with independent package versioning
 | Package | Version | Platform | Purpose |
 |---------|---------|----------|---------|
 | **AwareCore** | v1.5.0 | Swift | Platform-agnostic foundation (types, protocols, testing) |
-| **AwareiOS** | v2.1.0 | iOS 17+ | iOS-specific implementation with direct action callbacks |
+| **AwareiOS** | v2.2.0 | iOS 17+ | iOS with UIViewID enum, .ui*() modifiers, typeText support |
 | **AwareMacOS** | v2.0.3 | macOS 14+ | macOS-specific implementation with CGEvent simulation |
 | **AwareBackendClient** | v1.0.0 | Cross-platform | HTTP client for BackendAware REST API |
+| **AwareBridge** | v1.0.0 | Cross-platform | WebSocket IPC for real-time communication (<5ms) |
 | **Aware** | v2.0.0 | Umbrella | Backward-compatible re-export facade |
 
 ### Importing Packages
@@ -114,6 +115,55 @@ let snapshot = await Aware.shared.snapshot(format: .compact)
 // Returns: ~100 tokens with all UI state
 ```
 
+### iOS Enhanced Features (AetherSing Integration)
+
+**Stable View Identifiers:**
+```swift
+import AwareiOS
+
+// Use predefined UIViewID enum to prevent ID drift
+Button("Sign In") { signIn() }
+    .uiTappable(UIViewID.signInButton.rawValue, label: "Sign In") {
+        await signIn()
+    }
+
+TextField("Email", text: $email)
+    .uiTextField(UIViewID.emailField.rawValue,
+                 text: $email,
+                 label: "Email",
+                 placeholder: "user@example.com")
+```
+
+**Rich State Tracking:**
+```swift
+Form {
+    // Fields with automatic typeText binding
+    TextField("Email", text: $email)
+        .uiTextField(UIViewID.emailField.rawValue, text: $email, label: "Email")
+
+    SecureField("Password", text: $password)
+        .uiSecureField(UIViewID.passwordField.rawValue, text: $password, label: "Password")
+}
+.uiValidationState("login-form",
+                   isValid: isValid,
+                   errors: ["Password too short"])
+.uiLoadingState("login-form",
+                isLoading: isLoading,
+                message: "Signing in...",
+                progress: 0.7)
+.uiErrorState("login-form",
+              error: loginError,
+              canRetry: true)
+```
+
+**TypeText Support (Ghost UI):**
+```swift
+// LLM can type without mouse simulation
+await AwareIOSPlatform.shared.typeText(UIViewID.emailField.rawValue,
+                                        text: "test@example.com")
+await AwareIOSPlatform.shared.executeAction(UIViewID.signInButton.rawValue)
+```
+
 ### Ghost UI Testing
 ```swift
 // Test text input without moving mouse
@@ -139,6 +189,64 @@ assert(emailState == "user@example.com")
 | `.awareFocus()` | Track focus/hover state | `.awareFocus("input-id")` |
 | `.awareScroll()` | Track scroll position | `.awareScroll("scrollview-id")` |
 | `.awareAnimation()` | Track animation state | `.awareAnimation("view-id", type: "spring", duration: 0.3, isAnimating: $animating)` |
+
+### iOS Convenience Modifiers (AwareiOS only)
+
+Rich state tracking modifiers for common UI patterns:
+
+| Modifier | Purpose | Key State Tracked |
+|----------|---------|-------------------|
+| `.uiLoadingState()` | Loading with progress | isLoading, loadingMessage, loadingProgress |
+| `.uiErrorState()` | Error with retry | hasError, errorMessage, canRetry |
+| `.uiProcessingState()` | Multi-step processing | isProcessing, currentStep, stepProgress, totalSteps |
+| `.uiValidationState()` | Form validation | isValid, errorCount, errors, warnings |
+| `.uiNetworkState()` | Network connectivity | isConnected, isLoading, lastSync |
+| `.uiSelectionState()` | List/collection selection | selectionCount, totalItems, allowsMultiple |
+| `.uiEmptyState()` | Empty content | isEmpty, emptyMessage, canAddItems |
+| `.uiAuthState()` | Authentication status | isAuthenticated, username, requiresReauth |
+| `.uiTappable()` | Direct action callback | isEnabled + ghost UI support |
+| `.uiTextField()` | Enhanced text field | value, placeholder, characterCount + typeText |
+| `.uiSecureField()` | Enhanced secure field | hasValue, placeholder, isEnabled |
+| `.uiToggle()` | Enhanced toggle | isOn, isEnabled |
+
+**Example:**
+```swift
+Form {
+    TextField("Email", text: $email)
+        .uiTextField("email", text: $email, label: "Email", placeholder: "user@example.com")
+}
+.uiValidationState("form", isValid: isValid, errors: ["Email required"])
+.uiLoadingState("form", isLoading: isSubmitting, message: "Submitting...", progress: 0.5)
+.uiNetworkState("form", isConnected: networkMonitor.isConnected)
+```
+
+### UIViewID Enum (iOS)
+
+Predefined stable identifiers to prevent ID drift:
+
+**Categories:**
+- **Authentication**: signInView, signUpView, emailField, passwordField, signInButton
+- **Navigation**: tabBar, homeTab, searchTab, profileTab, navigationBar, backButton
+- **Forms**: formView, textField, submitButton, cancelButton, saveButton, deleteButton
+- **Settings**: settingsView, notificationsToggle, darkModeToggle, logoutButton
+- **Loading/Error**: loadingView, errorView, retryButton, emptyStateView
+- **Media**: videoPlayer, audioPlayer, playButton, pauseButton
+
+**Usage:**
+```swift
+Button("Sign In") { signIn() }
+    .uiTappable(UIViewID.signInButton.rawValue, label: "Sign In") {
+        await signIn()
+    }
+
+// Scoped IDs
+UIViewID.homeView.scoped("header")     // "homeView.header"
+UIViewID.listView.indexed(0)           // "listView[0]"
+UIViewID.signInButton.suffixed("primary") // "signInButton-primary"
+
+// Custom IDs
+UIViewID.custom("my-custom-id")
+```
 
 ## Testing Features
 

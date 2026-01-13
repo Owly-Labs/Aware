@@ -5,6 +5,109 @@ All notable changes to the Aware framework will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [2.2.0] - 2026-01-12
+
+### Added - Phase 9: AetherSing Integration Patterns
+
+**UIViewID Enum Pattern (AwareiOS)**
+- Type-safe view identifier protocol `UIViewIdentifier` for compile-time ID validation
+- 60+ predefined stable identifiers to prevent ID drift:
+  - Authentication: signInView, emailField, passwordField, signInButton
+  - Navigation: tabBar, homeTab, searchTab, profileTab, navigationBar, backButton
+  - Forms: formView, textField, submitButton, cancelButton, saveButton, deleteButton
+  - Settings: settingsView, notificationsToggle, darkModeToggle, logoutButton
+  - Loading/Error: loadingView, errorView, retryButton, emptyStateView
+  - Media: videoPlayer, audioPlayer, playButton, pauseButton
+- ID generators: `.scoped("child")`, `.indexed(0)`, `.suffixed("variant")`
+- Custom ID support via `.custom("id")` for ad-hoc identifiers
+
+**iOS Convenience Modifiers (AwareiOS)**
+- `.uiLoadingState()` - Loading with optional message and progress (0.0-1.0)
+- `.uiErrorState()` - Error tracking with retry capability flag
+- `.uiProcessingState()` - Multi-step processing with current step and total steps
+- `.uiValidationState()` - Form validation with error and warning arrays
+- `.uiNetworkState()` - Network connectivity, loading state, last sync time
+- `.uiSelectionState()` - List/collection selection with count and multi-select flag
+- `.uiEmptyState()` - Empty state with custom message and add action capability
+- `.uiAuthState()` - Authentication status, username, reauth requirement
+- `.uiTappable()` - Direct action callback registration for ghost UI testing
+- `.uiTextField()` - Enhanced TextField with automatic typeText binding
+- `.uiSecureField()` - Enhanced SecureField with hasValue tracking
+- `.uiToggle()` - Enhanced Toggle with isOn and isEnabled tracking
+
+**TypeText Support (AwareiOS)**
+- Text bindings registry for automatic TextField binding management
+- `TextBindingModifier` for automatic registration on .task lifecycle
+- `simulateInput()` implementation for `.type` command handling
+- Public API: `registerTextBinding()`, `typeText()` methods
+- `textInputViewIds` property lists all registered text input fields
+
+### Changed
+- AwareIOSPlatform now tracks both actionable views and text input views
+- Direct action callbacks support automatic registration via modifiers
+- Enhanced platform service with typeText capability
+
+## [1.0.0-bridge] - 2026-01-12
+
+### Added - Phase 8: WebSocket IPC for Real-Time Communication
+
+**AwareBridge Package**
+- WebSocket server using SwiftNIO on localhost:9999
+- MCP (Model Context Protocol) for LLM-driven UI testing commands
+- Real-time bidirectional communication (<5ms latency vs 50ms file polling)
+- HTTP health endpoint at `/health` for monitoring
+- Event broadcasting to all connected clients with 100-event buffer
+
+**MCP Protocol Types**
+- `MCPCommand` - Commands from Breathe IDE/LLM to Aware apps (tap, type, snapshot, wait, etc.)
+- `MCPResult` - Results back to Breathe IDE with success/failure and data
+- `MCPEvent` - Real-time events (viewAppeared, stateChanged, actionCompleted, etc.)
+- `MCPBatch` - Atomic multi-command execution with rollback on failure
+- `MCPConfiguration` - Server configuration with Breathe IDE defaults (port 9999)
+- 15+ action types: tap, type, swipe, scroll, snapshot, find, wait, assert, focus, etc.
+
+**BreatheMCPAdapter**
+- High-level Breathe IDE integration layer with clean async/await API
+- MCP tool implementations:
+  - `ui_snapshot()` - Get current UI state in compact format
+  - `ui_action()` - Perform actions (tap, type, swipe, scroll)
+  - `ui_find()` - Find elements by label, type, or state
+  - `ui_wait()` - Wait for conditions with timeout
+  - `ui_test()` - Run batch tests with expectations
+- Focus management: `focus()`, `focusNext()`, `focusPrevious()`
+- Batch test execution with atomic rollback support
+- Health check and connection monitoring
+
+**iOS WebSocket Support (AwareiOS)**
+- `IPCTransportMode` enum: fileBased, webSocket, auto (auto-detect preferred)
+- Auto-detection with automatic fallback to file-based IPC for compatibility
+- `WebSocketIPCClient` wrapper for simplified WebSocket communication
+- `sendCommandViaWebSocket()` with MCP protocol translation
+- `sendCommandViaFiles()` fallback for legacy compatibility
+- Backward compatible with existing `AwareCommand`/`AwareResult` types
+
+**Root Package Integration**
+- Added swift-nio (2.62.0+) and swift-nio-ssl (2.25.0+) dependencies
+- New `AwareBridge` library target in root Package.swift
+- Independent versioning ready (v1.0.0)
+- StrictConcurrency enabled across all targets
+
+### Performance
+- **10x latency reduction**: <5ms WebSocket vs 50ms file polling
+- Real-time event streaming to multiple clients simultaneously
+- Configurable event buffer size (default: 100 events)
+- Connection pooling and automatic reconnection
+- Zero-copy frame handling with NIO ByteBuffer
+
+### Documentation
+- Added WebSocket IPC section to README.md with usage examples
+- MCP protocol JSON examples for command/result format
+- Performance comparison table (WebSocket vs file polling)
+- Updated package version table with AwareBridge v1.0.0
+- Architecture diagrams showing Breathe IDE ↔ WebSocket ↔ Aware apps
+
 ## [2.0.0] - 2026-01-12
 
 ### Added
