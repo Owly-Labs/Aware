@@ -98,6 +98,36 @@ public final class AwareDocumentationService: ObservableObject {
         return generator.generate(version: version)
     }
 
+    // MARK: - Protocol-Based Development Exports (v3.0+)
+
+    /// Export lightweight protocol stubs (50-100 LOC)
+    /// For LLM code generation without framework import
+    public func exportProtocolStubs(platform: Platform = .all, language: Language = .swift) -> ProtocolStubsResult {
+        let generator = AwareProtocolGenerator(registry: registry)
+        return generator.generateStubs(platform: platform, language: language)
+    }
+
+    /// Export validation rules (JSON)
+    /// For Aware-compliance checking via MCP tools
+    public func exportValidationRules() -> ValidationRulesResult {
+        let generator = AwareProtocolGenerator(registry: registry)
+        return generator.generateValidationRules()
+    }
+
+    /// Export pattern catalog (JSON)
+    /// For LLM guidance on modifier usage
+    public func exportPatternCatalog() -> PatternCatalogResult {
+        let generator = AwareProtocolGenerator(registry: registry)
+        return generator.generatePatternCatalog()
+    }
+
+    /// Export complete protocol specification
+    /// Includes stubs, validation rules, and pattern catalog
+    public func exportProtocolSpecification() -> ProtocolSpecificationResult {
+        let generator = AwareProtocolGenerator(registry: registry)
+        return generator.generate()
+    }
+
     // MARK: - Convenience Exports
 
     /// Export to file

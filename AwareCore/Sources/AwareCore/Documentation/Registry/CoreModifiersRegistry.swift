@@ -85,7 +85,25 @@ public struct CoreModifiersRegistry {
             ],
             tokenCost: 3,
             relatedModifiers: [".awareContainer", ".awareState"],
-            since: "1.0.0"
+            since: "1.0.0",
+            requiredParameters: ["id"],
+            validationPattern: nil,  // Manual validation - check ID uniqueness
+            commonMistakes: [
+                CommonMistake(
+                    pattern: #"\.aware\("[^"]*",\s*label:\s*"[^"]*",\s*captureVisuals:\s*false\)"#,
+                    description: "captureVisuals: false may reduce snapshot quality",
+                    severity: .info,
+                    example: ".aware(\"view\", label: \"View\", captureVisuals: false)"
+                )
+            ],
+            autoFixes: [
+                AutoFix(
+                    description: "Add .aware() modifier with unique ID",
+                    codeTransform: "{ViewType}(...)\n  .aware(\"{id}\", label: \"{description}\")",
+                    confidence: 0.85,
+                    example: "Text(\"Hello\").aware(\"greeting\", label: \"Greeting\")"
+                )
+            ]
         )
     }
 
@@ -189,7 +207,31 @@ public struct CoreModifiersRegistry {
             ],
             tokenCost: 4,
             relatedModifiers: [".awareMetadata", ".awareTappable", ".awareAction"],
-            since: "1.0.0"
+            since: "1.0.0",
+            requiredParameters: ["id", "label"],
+            validationPattern: #"Button\([^)]*\)(?=.*\.awareButton)"#,
+            commonMistakes: [
+                CommonMistake(
+                    pattern: #"Button\([^)]*\)(?!.*\.awareButton)"#,
+                    description: "Button missing .awareButton() modifier",
+                    severity: .warning,
+                    example: "Button(\"Tap\") { } // Missing .awareButton()"
+                ),
+                CommonMistake(
+                    pattern: #"\.awareButton\([^,)]+\)"#,
+                    description: "Button ID provided but label missing",
+                    severity: .error,
+                    example: ".awareButton(\"btn\") // Missing label parameter"
+                )
+            ],
+            autoFixes: [
+                AutoFix(
+                    description: "Add .awareButton() modifier with ID and label",
+                    codeTransform: "Button(\"{text}\") { {action} }\n  .awareButton(\"{id}\", label: \"{text}\")",
+                    confidence: 0.9,
+                    example: "Button(\"Save\") { save() }.awareButton(\"save-btn\", label: \"Save\")"
+                )
+            ]
         )
     }
 

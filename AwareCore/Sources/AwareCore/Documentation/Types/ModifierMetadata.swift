@@ -27,6 +27,12 @@ public struct ModifierMetadata: Codable, Sendable, Hashable, Identifiable {
     public let since: String                  // "1.0.0"
     public let deprecated: String?            // Deprecation message if applicable
 
+    // MARK: Validation Metadata (v3.0+ Protocol-Based Development)
+    public let requiredParameters: [String]?  // ["id", "label"] - Parameters that must be provided
+    public let validationPattern: String?     // Regex for compliance checking
+    public let commonMistakes: [CommonMistake]? // Known error patterns
+    public let autoFixes: [AutoFix]?          // Suggested corrections
+
     public init(
         name: String,
         fullSignature: String,
@@ -39,7 +45,11 @@ public struct ModifierMetadata: Codable, Sendable, Hashable, Identifiable {
         tokenCost: Int? = nil,
         relatedModifiers: [String] = [],
         since: String,
-        deprecated: String? = nil
+        deprecated: String? = nil,
+        requiredParameters: [String]? = nil,
+        validationPattern: String? = nil,
+        commonMistakes: [CommonMistake]? = nil,
+        autoFixes: [AutoFix]? = nil
     ) {
         self.id = name
         self.name = name
@@ -54,6 +64,10 @@ public struct ModifierMetadata: Codable, Sendable, Hashable, Identifiable {
         self.relatedModifiers = relatedModifiers
         self.since = since
         self.deprecated = deprecated
+        self.requiredParameters = requiredParameters
+        self.validationPattern = validationPattern
+        self.commonMistakes = commonMistakes
+        self.autoFixes = autoFixes
     }
 
     // MARK: - Compact Representations
@@ -136,4 +150,53 @@ public enum ModifierCategory: String, Codable, Sendable, CaseIterable {
         case .convenience: return "⚡"
         }
     }
+}
+
+// MARK: - Validation Types (v3.0+ Protocol-Based Development)
+
+/// Common mistake pattern detected in code
+public struct CommonMistake: Codable, Sendable, Hashable {
+    public let pattern: String           // What to detect (regex or description)
+    public let description: String       // Explain the mistake
+    public let severity: ValidationSeverity
+    public let example: String?          // Example of the mistake
+
+    public init(
+        pattern: String,
+        description: String,
+        severity: ValidationSeverity,
+        example: String? = nil
+    ) {
+        self.pattern = pattern
+        self.description = description
+        self.severity = severity
+        self.example = example
+    }
+}
+
+/// Suggested automatic fix for a common mistake
+public struct AutoFix: Codable, Sendable, Hashable {
+    public let description: String       // What the fix does
+    public let codeTransform: String     // How to fix (template or description)
+    public let confidence: Double        // 0.0-1.0 (how confident the fix is correct)
+    public let example: String?          // Example of the fix
+
+    public init(
+        description: String,
+        codeTransform: String,
+        confidence: Double,
+        example: String? = nil
+    ) {
+        self.description = description
+        self.codeTransform = codeTransform
+        self.confidence = confidence
+        self.example = example
+    }
+}
+
+/// Validation severity level
+public enum ValidationSeverity: String, Codable, Sendable, Hashable {
+    case error      // Must fix
+    case warning    // Should fix
+    case info       // Nice to have
 }
