@@ -14,6 +14,62 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Cross-Platform**: iOS, macOS, Web (TypeScript), Backend (Python/Node)
 - **Type-Safe**: v3.0 introduces explicit action methods and hierarchical errors
 - **Protocol-Based Development**: MCP-guided code generation without framework import
+- **TDD-First Philosophy**: Test-driven development made affordable with 99.3% token reduction
+
+## Core Philosophy: Test-Driven Development
+
+**Aware is built to enable TDD at scale**. Traditional screenshot-based testing costs $45 per 1000 tests, making true TDD prohibitively expensive. Aware reduces this to $0.33—enabling teams to write tests first without budget concerns.
+
+### Why TDD with Aware?
+
+| Aspect | Screenshot-Based | Aware-Based | Improvement |
+|--------|------------------|-------------|-------------|
+| **Tokens per test** | 15,000 | 110 | 99.3% reduction |
+| **Cost per test** | $0.045 | $0.00033 | 136x cheaper |
+| **1000 tests cost** | $45.00 | $0.33 | $44.67 savings |
+| **Monthly cost** (2000 tests) | $90.00 | $0.66 | $89.34 savings |
+
+### The TDD Workflow
+
+```
+┌─────────────────────────────────────────────┐
+│ 1. RED: Write failing test                 │
+│    - Assert expected UI state               │
+│    - Snapshot captures structure            │
+│    ↓                                        │
+│ 2. GREEN: Implement with .aware*()         │
+│    - Add modifiers to views                 │
+│    - Test passes immediately                │
+│    ↓                                        │
+│ 3. REFACTOR: Improve code safely           │
+│    - Snapshots catch regressions            │
+│    - Tests still pass                       │
+│    ↓                                        │
+│ 4. REPEAT: Next feature                    │
+└─────────────────────────────────────────────┘
+```
+
+### Dogfooding: Aware Tests Aware
+
+Aware practices what it preaches:
+- **65+ iOS platform tests** - Full TDD coverage of iOS implementation
+- **LLM integration tests** - Validate LLMs can "see and touch" UI
+- **Token efficiency benchmarks** - Prove 99.3% reduction claim
+- **Continuous validation** - Every commit runs full test suite
+
+**See:**
+- [TDD_GUIDE.md](TDD_GUIDE.md) - Comprehensive TDD tutorial
+- `Tests/LLMIntegrationTests/` - LLM snapshot parsing tests
+- `Tests/PerformanceBenchmarks/` - Token efficiency validation
+- `AwareiOS/Tests/` - 65 production TDD examples
+
+### Development Principles
+
+1. **Write tests BEFORE implementation** - No new code without tests
+2. **Use compact snapshots** - Default to `.compact` format for efficiency
+3. **Test state, not implementation** - Assert behavior, not internal details
+4. **Dogfood the framework** - Use Aware to test Aware
+5. **Measure and validate** - Track token costs, prove efficiency claims
 
 ## Recent Updates (v3.1.0-alpha)
 

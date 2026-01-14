@@ -191,6 +191,79 @@ if regression != nil {
 }
 ```
 
+## Test-Driven Development (TDD)
+
+Aware enables affordable, rapid TDD cycles that were previously too expensive with screenshot-based testing.
+
+### Why TDD with Aware?
+
+**Traditional Screenshot Testing**:
+- ❌ 15,000 tokens per test ($0.045)
+- ❌ 1000 tests = $45
+- ❌ Too expensive to run frequently
+
+**Aware Snapshot Testing**:
+- ✅ 110 tokens per test ($0.00033)
+- ✅ 1000 tests = $0.33
+- ✅ **Run 136x more tests for the same cost!**
+
+### The TDD Cycle
+
+```
+1. RED: Write failing test
+   ↓
+2. GREEN: Implement with .aware*() modifiers
+   ↓
+3. REFACTOR: Improve code, snapshots catch regressions
+   ↓
+4. REPEAT
+```
+
+### Quick Example
+
+```swift
+// 1. RED: Write test first
+func testLoginFormExists() async {
+    let snapshot = Aware.shared.captureSnapshot(format: .compact)
+    XCTAssertTrue(snapshot.content.contains("email-field"))
+    XCTAssertTrue(snapshot.content.contains("password-field"))
+    XCTAssertTrue(snapshot.content.contains("login-btn"))
+}
+
+// 2. GREEN: Implement view
+struct LoginView: View {
+    @State private var email = ""
+    @State private var password = ""
+
+    var body: some View {
+        VStack {
+            TextField("Email", text: $email)
+                .awareTextField("email-field", text: $email, label: "Email")
+
+            SecureField("Password", text: $password)
+                .awareSecureField("password-field", text: $password, label: "Password")
+
+            Button("Login") { login() }
+                .awareButton("login-btn", label: "Login")
+        }
+    }
+}
+
+// 3. REFACTOR: Tests still pass!
+```
+
+### Token Efficiency in Practice
+
+**Cost per 1000 tests** (at $3/M tokens):
+- Screenshot-based: **$45.00**
+- Aware-based: **$0.33**
+- **Savings: $44.67** 💰
+
+**Monthly savings** (100 tests/day × 20 days):
+- **$89.34 per developer**
+
+See [TDD_GUIDE.md](TDD_GUIDE.md) for comprehensive tutorial.
+
 ## WebSocket IPC (Real-Time Communication)
 
 AwareBridge provides WebSocket-based IPC for real-time communication between Breathe IDE and your apps, replacing file-based polling (50ms) with true real-time updates (<5ms).
