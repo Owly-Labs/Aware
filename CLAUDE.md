@@ -6,13 +6,58 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Aware** is a universal SwiftUI instrumentation framework for LLM-driven UI testing. It reduces token costs by 99.3% compared to screenshots while providing full UI state access.
 
-> ⚠️ **Development Beta (v3.0.0-beta)**: Active development release. APIs subject to change.
+> 🎉 **Version 3.1.0-alpha**: Phase 4 Future Enhancements complete! New validation rules, refactoring tools, and pattern library.
 
 **Core Value Proposition:**
 - **Ghost UI Testing**: LLMs test without mouse/screenshot simulation
-- **Token Efficiency**: 100-120 tokens vs 15,000 for screenshots
+- **Token Efficiency**: 100-120 tokens vs 15,000 for screenshots (99.3% reduction)
 - **Cross-Platform**: iOS, macOS, Web (TypeScript), Backend (Python/Node)
 - **Type-Safe**: v3.0 introduces explicit action methods and hierarchical errors
+- **Protocol-Based Development**: MCP-guided code generation without framework import
+
+## Recent Updates (v3.1.0-alpha)
+
+**Phase 4 Future Enhancements - ALL COMPLETE** ✅
+
+### 1. More Modifiers (+4 new, 9 total)
+- `.awareToggle()` - Toggle state tracking (on/off testing)
+- `.awareNavigation()` - Navigation actions and destinations
+- `.awareAnimation()` - Animation state and timing tracking
+- `.awareScroll()` - Scroll position and state tracking
+
+**Impact**: Stubs grew from 34 → 48 LOC (+41%), modifiers from 5 → 9 (+80%)
+
+### 2. Enhanced Validation (+20 rules, 27 total)
+- **WCAG Accessibility**: 7 rules (WCAG 2.1 Level AA compliance)
+  - Interactive element labels (2.4.6), toggle labels (4.1.2), navigation labels (2.4.4)
+  - Semantic structure (1.3.1), touch targets (2.5.5), state changes (4.1.3), form validation (3.3.1)
+- **Performance Budgets**: 6 rules
+  - Action execution (250ms standard), animation duration (500ms max), network timeouts
+  - Scroll performance, state update frequency, computation warnings
+- **State Machine**: 7 rules
+  - Conflicting state detection, initialization requirements, transition tracking
+  - Unidirectional data flow, dependency tracking, loading/error patterns
+
+**Impact**: Validation rules increased from 7 → 27 (+286%), protocol size 12 KB → 28 KB
+
+### 3. Tool Improvements (+3 MCP tools, 8 total)
+- **aware_refactor_code**: Automatic refactoring (minimal/standard/comprehensive strategies)
+- **aware_estimate_savings**: ROI calculator ($449.95 savings per 100 tests, 10 elements)
+- **aware_compare_coverage**: Before/after comparison with recommendations
+
+**Impact**: MCP tools increased from 5 → 8 (+60%), 1,090 LOC of new functionality
+
+### 4. Pattern Library (18 comprehensive patterns)
+- **Authentication**: Login, Signup, Forgot Password (3 patterns)
+- **Forms**: Basic, Multi-Step, Validated (3 patterns)
+- **Lists**: Simple, Pull-to-Refresh, Searchable (3 patterns)
+- **Navigation**: Tabs, Master-Detail, Wizard (3 patterns)
+- **Settings**: Panel, Preferences (2 patterns)
+- **Feedback**: Loading, Error, Empty States (3 patterns)
+
+**Impact**: 1,185 LOC, 2,892 tokens, each pattern includes code template, best practices, common mistakes
+
+**See:** `Tests/Phase4Testing/FUTURE_ENHANCEMENTS_SUMMARY.md` for complete details
 
 ## Monorepo Architecture
 
@@ -20,12 +65,12 @@ Aware is organized as a **modular monorepo** with independent package versioning
 
 | Package | Version | Platform | Purpose |
 |---------|---------|----------|---------|
-| **AwareCore** | v3.0.0-beta | Swift | Platform-agnostic foundation (types, protocols, services) |
+| **AwareCore** | v3.1.0-alpha | Swift | Platform-agnostic foundation with enhanced validation & patterns |
 | **AwareiOS** | v2.2.0-beta | iOS 17+ | iOS-specific implementation with UIViewID enum, typeText support |
 | **AwareMacOS** | v2.0.3-beta | macOS 14+ | macOS-specific implementation with CGEvent simulation |
 | **AwareBackendClient** | v1.0.0-beta | Cross-platform | HTTP client for BackendAware REST API |
 | **AwareBridge** | v1.0.0-beta | Cross-platform | WebSocket IPC for real-time communication (<5ms latency) |
-| **Aware** | v3.0.0-beta | Umbrella | Backward-compatible re-export facade |
+| **Aware** | v3.1.0-alpha | Umbrella | Backward-compatible re-export facade with new modifiers |
 
 **Key Benefit**: Each package versions independently. Upgrade iOS without affecting macOS.
 
@@ -37,11 +82,15 @@ Aware/
 │   ├── Package.swift
 │   ├── Sources/AwareCore/
 │   │   ├── Documentation/       # API documentation generators
+│   │   │   ├── Generators/      # AwareProtocolGenerator (27 validation rules)
+│   │   │   ├── Patterns/        # CommonPatterns (18 UI templates) **NEW v3.1**
+│   │   │   └── Registry/        # CoreModifiersRegistry (9 modifiers)
 │   │   ├── Errors/              # Error types (hierarchical v3.0)
 │   │   ├── Managers/            # Focus, Navigation, Interaction managers
 │   │   ├── Performance/         # Performance monitoring & budgeting
 │   │   ├── Recovery/            # Error recovery strategies
 │   │   ├── Services/            # Core services (AwareService, modifiers)
+│   │   │   └── AwareModifiersAdvanced.swift  # New modifiers v3.1
 │   │   ├── Testing/             # Accessibility, coverage, mocking
 │   │   └── Types/               # Protocols, commands, state types
 │   └── Tests/AwareCoreTests/
