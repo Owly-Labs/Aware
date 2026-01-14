@@ -317,6 +317,85 @@ public struct AwareProtocolGenerator {
             confidence: 0.7
         ))
 
+        // MARK: - State Machine Validation Rules (v3.1+)
+
+        // Rule 21: Conflicting state detection
+        rules.append(ValidationRule(
+            name: "conflicting_state_detection",
+            category: .consistency,
+            severity: .error,
+            pattern: nil,
+            description: "Views should not have conflicting state combinations (e.g., isLoading && hasError simultaneously)",
+            fix: "Use .awareState() to track all states and ensure mutually exclusive states are properly managed with enums or state machine patterns",
+            confidence: 0.85
+        ))
+
+        // Rule 22: State initialization required
+        rules.append(ValidationRule(
+            name: "state_initialization_required",
+            category: .correctness,
+            severity: .warning,
+            pattern: #"@State\s+(private\s+)?var\s+(\w+)(?!\s*=)"#,
+            description: "@State variables should be initialized with default values to prevent undefined behavior",
+            fix: "Initialize @State variables: @State private var myState = defaultValue",
+            confidence: 0.9
+        ))
+
+        // Rule 23: State transition tracking
+        rules.append(ValidationRule(
+            name: "state_transition_tracking",
+            category: .completeness,
+            severity: .info,
+            pattern: nil,
+            description: "State transitions (e.g., loading → loaded → error) should be tracked with .awareState() at each transition",
+            fix: "Add .awareState() calls after each state change to enable transition monitoring and debugging",
+            confidence: 0.7
+        ))
+
+        // Rule 24: Unidirectional data flow
+        rules.append(ValidationRule(
+            name: "unidirectional_data_flow",
+            category: .structure,
+            severity: .info,
+            pattern: nil,
+            description: "State updates should follow unidirectional data flow (actions → state → view)",
+            fix: "Move state mutations to action handlers and track with .awareButton() + .awareState() pattern",
+            confidence: 0.65
+        ))
+
+        // Rule 25: State dependency tracking
+        rules.append(ValidationRule(
+            name: "state_dependency_tracking",
+            category: .completeness,
+            severity: .info,
+            pattern: nil,
+            description: "Derived state (computed from other @State) should be tracked to understand view dependencies",
+            fix: "Track derived state with .awareState() even if computed, to enable dependency analysis",
+            confidence: 0.6
+        ))
+
+        // Rule 26: Loading state pattern
+        rules.append(ValidationRule(
+            name: "loading_state_pattern",
+            category: .structure,
+            severity: .info,
+            pattern: #"@State\s+.*\s+isLoading"#,
+            description: "Loading states should follow standard pattern: isLoading, loadingMessage, and error states",
+            fix: "Use complete loading state pattern: @State isLoading, @State loadingMessage, @State error with .awareState() tracking",
+            confidence: 0.75
+        ))
+
+        // Rule 27: Error state handling
+        rules.append(ValidationRule(
+            name: "error_state_handling",
+            category: .correctness,
+            severity: .warning,
+            pattern: #"@State\s+.*\s+(error|errorMessage)"#,
+            description: "Error states should be tracked and displayed to users with proper recovery actions",
+            fix: "Track error state with .awareState() and provide .awareButton() for retry/dismiss actions",
+            confidence: 0.8
+        ))
+
         return ValidationRulesResult(
             rules: rules,
             categories: Set(rules.map { $0.category }),
