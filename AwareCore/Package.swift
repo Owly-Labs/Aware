@@ -12,6 +12,10 @@ let package = Package(
             name: "AwareCore",
             targets: ["AwareCore"]
         ),
+        .executable(
+            name: "export-protocol",
+            targets: ["ExportProtocol"]
+        ),
     ],
     dependencies: [],
     targets: [
@@ -27,6 +31,11 @@ let package = Package(
             name: "AwareCoreTests",
             dependencies: ["AwareCore"],
             path: "Tests/AwareCoreTests"
+        ),
+        .executableTarget(
+            name: "ExportProtocol",
+            dependencies: ["AwareCore"],
+            path: "Sources/ExportProtocol"
         ),
     ]
 )
