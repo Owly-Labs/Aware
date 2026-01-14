@@ -483,7 +483,7 @@ final class AwareLLMSnapshotTests: XCTestCase {
         let json = await Aware.shared.generateLLMSnapshot()
 
         // Then: Should include common login errors
-        XCTAssertTrue(json.contains("commonErrors") || json.contains("error"),
+        XCTAssertTrue(json.contains("errors") || json.contains("error"),
                      "Should include common errors guidance")
     }
 
@@ -546,7 +546,7 @@ final class AwareLLMSnapshotTests: XCTestCase {
         XCTAssertTrue(json.contains("Sign In") || json.contains("submit"))
 
         // Should have test suggestions
-        XCTAssertTrue(json.contains("testSuggestions"))
+        XCTAssertTrue(json.contains("tests"))
 
         // Should have intent
         XCTAssertTrue(json.contains("intent"))

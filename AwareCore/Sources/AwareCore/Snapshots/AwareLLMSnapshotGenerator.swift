@@ -99,32 +99,8 @@ extension Aware {
                     modalPresentation: nil
                 )
 
-                // 5. Create metadata
-                let meta = SnapshotMeta(
-                    timestamp: ISO8601DateFormatter().string(from: Date()),
-                    tokenCount: 0,
-                    format: "llm",
-                    version: "1.0.0",
-                    app: Bundle.main.bundleIdentifier,
-                    device: getDeviceName()
-                )
-
-                // 6. Create and encode snapshot
-                var snapshot = AwareLLMSnapshot(view: viewDescriptor, meta: meta)
-                let json = try snapshot.toJSON()
-
-                // 7. Update token count
-                let actualTokens = json.count / 4
-                let updatedMeta = SnapshotMeta(
-                    timestamp: meta.timestamp,
-                    tokenCount: actualTokens,
-                    format: meta.format,
-                    version: meta.version,
-                    app: meta.app,
-                    device: meta.device
-                )
-                snapshot = AwareLLMSnapshot(view: viewDescriptor, meta: updatedMeta)
-
+                // 5. Create and encode snapshot (meta omitted for token efficiency)
+                let snapshot = AwareLLMSnapshot(view: viewDescriptor, meta: nil)
                 return try snapshot.toJSON()
 
             } catch {

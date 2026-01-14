@@ -13,11 +13,24 @@ import Foundation
 /// LLM-optimized snapshot containing full UI state with guidance
 public struct AwareLLMSnapshot: Codable, Sendable {
     public let view: ViewDescriptor
-    public let meta: SnapshotMeta
+    public let meta: SnapshotMeta?  // Optional for token efficiency
 
-    public init(view: ViewDescriptor, meta: SnapshotMeta) {
+    public init(view: ViewDescriptor, meta: SnapshotMeta? = nil) {
         self.view = view
         self.meta = meta
+    }
+
+    // Custom encoding to omit meta if nil
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(view, forKey: .view)
+        if let m = meta {
+            try container.encode(m, forKey: .meta)
+        }
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case view, meta
     }
 }
 
@@ -36,11 +49,11 @@ public struct ViewDescriptor: Codable, Sendable {
     // Hierarchy
     public let elements: [ElementDescriptor]
 
-    // LLM Guidance
-    public let testSuggestions: [String]
-    public let commonErrors: [String]?
+    // LLM Guidance (shortened field names for token efficiency)
+    public let testSuggestions: [String]  // Encoded as "tests"
+    public let commonErrors: [String]?    // Encoded as "errors"
 
-    // Navigation
+    // Navigation (only encoded if present)
     public let canNavigateBack: Bool?
     public let previousView: String?
     public let modalPresentation: Bool?
@@ -67,6 +80,38 @@ public struct ViewDescriptor: Codable, Sendable {
         self.canNavigateBack = canNavigateBack
         self.previousView = previousView
         self.modalPresentation = modalPresentation
+    }
+
+    // Custom encoding for token optimization
+    enum CodingKeys: String, CodingKey {
+        case id, type, intent, state, elements
+        case testSuggestions = "tests"
+        case commonErrors = "errors"
+        case canNavigateBack, previousView, modalPresentation
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(type, forKey: .type)
+        try container.encode(intent, forKey: .intent)
+        try container.encode(state, forKey: .state)
+        try container.encode(elements, forKey: .elements)
+        try container.encode(testSuggestions, forKey: .testSuggestions)
+
+        // Only encode optional fields if present
+        if let errors = commonErrors {
+            try container.encode(errors, forKey: .commonErrors)
+        }
+        if let nav = canNavigateBack {
+            try container.encode(nav, forKey: .canNavigateBack)
+        }
+        if let prev = previousView {
+            try container.encode(prev, forKey: .previousView)
+        }
+        if let modal = modalPresentation {
+            try container.encode(modal, forKey: .modalPresentation)
+        }
     }
 }
 
@@ -101,9 +146,9 @@ public struct ElementDescriptor: Codable, Sendable {
     public let errorMessage: String?
     public let placeholder: String?
 
-    // LLM Guidance
-    public let nextAction: String
-    public let exampleValue: String?
+    // LLM Guidance (shortened for token efficiency)
+    public let nextAction: String      // Encoded as "next"
+    public let exampleValue: String?   // Encoded as "example"
 
     // Behavior (for buttons/actions)
     public let action: String?
@@ -162,6 +207,82 @@ public struct ElementDescriptor: Codable, Sendable {
         self.accessibilityLabel = accessibilityLabel
         self.accessibilityHint = accessibilityHint
         self.frame = frame
+    }
+
+    // Custom encoding for token optimization
+    enum CodingKeys: String, CodingKey {
+        case id, type, label, value, state
+        case enabled, visible, focused
+        case required, validation, errorMessage, placeholder
+        case nextAction = "next"
+        case exampleValue = "example"
+        case action, nextView, failureView, dependencies
+        case accessibilityLabel, accessibilityHint, frame
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        // Always encode core fields
+        try container.encode(id, forKey: .id)
+        try container.encode(type, forKey: .type)
+        try container.encode(label, forKey: .label)
+        try container.encode(state, forKey: .state)
+        try container.encode(nextAction, forKey: .nextAction)
+
+        // Only encode value if not empty
+        if !value.isEmpty {
+            try container.encode(value, forKey: .value)
+        }
+
+        // Only encode enabled/visible if false (default is true)
+        if !enabled {
+            try container.encode(enabled, forKey: .enabled)
+        }
+        if !visible {
+            try container.encode(visible, forKey: .visible)
+        }
+
+        // Only encode optional fields if present
+        if let foc = focused {
+            try container.encode(foc, forKey: .focused)
+        }
+        if let req = required {
+            try container.encode(req, forKey: .required)
+        }
+        if let val = validation {
+            try container.encode(val, forKey: .validation)
+        }
+        if let err = errorMessage {
+            try container.encode(err, forKey: .errorMessage)
+        }
+        if let ph = placeholder {
+            try container.encode(ph, forKey: .placeholder)
+        }
+        if let ex = exampleValue {
+            try container.encode(ex, forKey: .exampleValue)
+        }
+        if let act = action {
+            try container.encode(act, forKey: .action)
+        }
+        if let nv = nextView {
+            try container.encode(nv, forKey: .nextView)
+        }
+        if let fv = failureView {
+            try container.encode(fv, forKey: .failureView)
+        }
+        if let deps = dependencies {
+            try container.encode(deps, forKey: .dependencies)
+        }
+        if let a11y = accessibilityLabel {
+            try container.encode(a11y, forKey: .accessibilityLabel)
+        }
+        if let hint = accessibilityHint {
+            try container.encode(hint, forKey: .accessibilityHint)
+        }
+        if let fr = frame {
+            try container.encode(fr, forKey: .frame)
+        }
     }
 }
 
