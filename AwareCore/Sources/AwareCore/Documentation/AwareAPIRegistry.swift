@@ -14,7 +14,7 @@ import os.log
 /// Central registry for framework API documentation
 ///
 /// **Pattern**: Singleton with static registration (mirrors `Aware.shared` + `viewRegistry`)
-/// **Usage**: Platform modules register their APIs via static `register()` methods
+/// **Usage**: AwarePlatform modules register their APIs via static `register()` methods
 @MainActor
 public final class AwareAPIRegistry: ObservableObject {
     public static let shared = AwareAPIRegistry()
@@ -100,7 +100,7 @@ public final class AwareAPIRegistry: ObservableObject {
     }
 
     /// Get modifiers by category
-    public func getModifiers(category: ModifierCategory? = nil, platform: Platform? = nil) -> [ModifierMetadata] {
+    public func getModifiers(category: ModifierCategory? = nil, platform: AwarePlatform? = nil) -> [ModifierMetadata] {
         var results = Array(modifiers.values)
 
         if let cat = category {

@@ -27,23 +27,17 @@ public final class Aware: ObservableObject {
 
     // MARK: - State Registry
 
-    /// Registered views with session/project context
-    @Published var viewRegistry: [String: AwareViewRegistration] = [:]
+    /// Registered views and their properties
+    @Published var viewRegistry: [String: AwareViewSnapshot] = [:]
 
     /// State values by view ID
     var stateRegistry: [String: [String: String]] = [:]
 
     /// Parent-child relationships
-    var parentChildMap: [String: String] = [:]  // childId -> parentId
+    private var parentChildMap: [String: String] = [:]  // childId -> parentId
 
     /// Registry version - incremented on any structural change
     var registryVersion: Int = 0
-
-    /// Maximum number of registrations to keep (LRU eviction)
-    private let maxRegistrations: Int = 1000
-
-    /// Default TTL for registrations (5 minutes)
-    public var defaultTTL: TimeInterval = 300
 
     // MARK: - Prop-State Consistency Tracking (Stale @State Detection)
 
@@ -332,10 +326,304 @@ public final class Aware: ObservableObject {
         stateRegistry
     }
 
+    // MARK: - iOS Gesture Registration
+
+    /// Register a gesture callback for a view
+    public func registerGesture(_ viewId: String, type: AwareGestureType, callback: @escaping AwareGestureCallback) {
+        if gestureCallbacks[viewId] == nil {
+            gestureCallbacks[viewId] = [:]
+        }
+        gestureCallbacks[viewId]?[type] = callback
+    }
+
+    /// Register a parameterized gesture callback
+    public func registerParameterizedGesture(_ viewId: String, type: AwareGestureType, callback: @escaping AwareParameterizedGestureCallback) {
+        if parameterizedGestureCallbacks[viewId] == nil {
+            parameterizedGestureCallbacks[viewId] = [:]
+        }
+        parameterizedGestureCallbacks[viewId]?[type] = callback
+    }
+
+    /// Unregister all gestures for a view
+    public func unregisterGestures(_ viewId: String) {
+        gestureCallbacks.removeValue(forKey: viewId)
+        parameterizedGestureCallbacks.removeValue(forKey: viewId)
+    }
+
+    /// Check if a gesture is registered for a view
+    public func hasGesture(_ viewId: String, type: AwareGestureType) -> Bool {
+        gestureCallbacks[viewId]?[type] != nil || parameterizedGestureCallbacks[viewId]?[type] != nil
+    }
+
+    /// List registered gestures for a view
+    public func registeredGestures(_ viewId: String) -> [AwareGestureType] {
+        var result: Set<AwareGestureType> = []
+        if let simple = gestureCallbacks[viewId] {
+            result.formUnion(simple.keys)
+        }
+        if let parameterized = parameterizedGestureCallbacks[viewId] {
+            result.formUnion(parameterized.keys)
+        }
+        return Array(result)
+    }
+
+    // MARK: - Text Binding Registration
+
+    /// Register a text binding for direct LLM text manipulation
+    public func registerTextBinding(_ viewId: String, binding: AwareTextBinding) {
+        textBindings[viewId] = binding
+    }
+
+    /// Unregister text binding
+    public func unregisterTextBinding(_ viewId: String) {
+        textBindings.removeValue(forKey: viewId)
+    }
+
+    /// Check if a text binding exists for a view
+    public func hasTextBinding(_ viewId: String) -> Bool {
+        textBindings[viewId] != nil
+    }
+
+    // MARK: - Registration
+
+    /// Register a view as visible
+    public func registerView(
+        _ id: String,
+        label: String? = nil,
+        isContainer: Bool = false,
+        parentId: String? = nil
+    ) {
+        // Input validation
+        guard !id.isEmpty else {
+            AwareError.invalidViewId(id).log()
+            return
+        }
+
+        if let existing = viewRegistry[id], existing.label != label {
+            AwareError.viewAlreadyExists(viewId: id, existingLabel: existing.label, newLabel: label).log()
+            return
+        }
+
+        if let parentId = parentId, viewRegistry[parentId] == nil {
+            AwareError.parentViewNotFound(parentId: parentId, childId: id).log()
+            return
+        }
+
+        if viewRegistry[id] == nil {
+            viewRegistry[id] = AwareViewSnapshot(
+                id: id,
+                label: label,
+                isContainer: isContainer,
+                parentId: parentId
+            )
+        } else {
+            viewRegistry[id]?.isVisible = true
+            if let label = label { viewRegistry[id]?.label = label }
+            if let parentId = parentId { viewRegistry[id]?.parentId = parentId }
+        }
+
+        // Add to parent's children (deduplicated)
+        if let parentId = parentId {
+            parentChildMap[id] = parentId
+            if viewRegistry[parentId]?.childIds.contains(id) == false {
+                viewRegistry[parentId]?.childIds.append(id)
+            }
+        }
+
+        registryVersion += 1
+        scheduleSnapshotWrite()
+    }
+
+    /// Unregister a view (mark as not visible)
+    public func unregisterView(_ id: String) {
+        viewRegistry[id]?.isVisible = false
+        registryVersion += 1
+        scheduleSnapshotWrite()
+    }
+
+    /// Update view frame
+    public func updateFrame(_ id: String, frame: CGRect) {
+        viewRegistry[id]?.frame = frame
+        scheduleSnapshotWrite()
+    }
+
+    /// Update visual properties
+    public func updateVisual(_ id: String, visual: AwareSnapshot) {
+        viewRegistry[id]?.visual = visual
+        scheduleSnapshotWrite()
+    }
+
+    /// Update view properties
+    public func updateView(
+        _ id: String,
+        frame: CGRect? = nil,
+        visual: AwareSnapshot? = nil
+    ) {
+        if let frame = frame {
+            viewRegistry[id]?.frame = frame
+        }
+        if let visual = visual {
+            viewRegistry[id]?.visual = visual
+        }
+        scheduleSnapshotWrite()
+    }
+
+    /// Register state value
+    public func registerState(_ viewId: String, key: String, value: String) {
+        // Input validation
+        guard viewRegistry[viewId] != nil else {
+            AwareError.stateNotFound(viewId: viewId, key: key).log()
+            return
+        }
+
+        guard !key.isEmpty else {
+            AwareError.stateRegistrationFailed(reason: "Empty state key", viewId: viewId, key: key).log()
+            return
+        }
+
+        if stateRegistry[viewId] == nil {
+            stateRegistry[viewId] = [:]
+        }
+        stateRegistry[viewId]?[key] = value
+        registryVersion += 1
+        scheduleSnapshotWrite()
+    }
+
+    /// Clear state for a view
+    public func clearState(_ viewId: String) {
+        stateRegistry[viewId] = nil
+        scheduleSnapshotWrite()
+    }
+
+    /// Get current state value for a view
+    public func getStateValue(_ viewId: String, key: String) -> String? {
+        stateRegistry[viewId]?[key]
+    }
+
+    /// Check if state matches expected value
+    public func stateMatches(_ viewId: String, key: String, value: String) -> Bool {
+        stateRegistry[viewId]?[key] == value
+    }
+
+    // MARK: - Extended Metadata Registration
+
+    /// Register animation state for a view
+    public func registerAnimation(_ viewId: String, animation: AwareAnimationState) {
+        viewRegistry[viewId]?.animation = animation
+        scheduleSnapshotWrite()
+    }
+
+    /// Clear animation state
+    public func clearAnimation(_ viewId: String) {
+        viewRegistry[viewId]?.animation = nil
+        scheduleSnapshotWrite()
+    }
+
+    /// Register action metadata for a button/interactive element
+    public func registerAction(_ viewId: String, action: AwareActionMetadata) {
+        viewRegistry[viewId]?.action = action
+        scheduleSnapshotWrite()
+    }
+
+    /// Register behavior metadata (data source, validation, etc.)
+    public func registerBehavior(_ viewId: String, behavior: AwareBehaviorMetadata) {
+        viewRegistry[viewId]?.behavior = behavior
+        scheduleSnapshotWrite()
+    }
+
+    /// Update scroll state for a scrollable view
+    public func updateScrollState(
+        _ viewId: String,
+        offset: CGPoint,
+        contentSize: CGSize,
+        visibleRect: CGRect
+    ) {
+        guard var snapshot = viewRegistry[viewId] else { return }
+        let visual = AwareSnapshot(
+            frame: snapshot.visual?.frame,
+            backgroundColor: snapshot.visual?.backgroundColor,
+            foregroundColor: snapshot.visual?.foregroundColor,
+            font: snapshot.visual?.font,
+            text: snapshot.visual?.text,
+            opacity: snapshot.visual?.opacity ?? 1.0,
+            isHidden: snapshot.visual?.isHidden ?? false,
+            isTextTruncated: snapshot.visual?.isTextTruncated,
+            intrinsicSize: snapshot.visual?.intrinsicSize,
+            lineCount: snapshot.visual?.lineCount,
+            maxLines: snapshot.visual?.maxLines,
+            isFocused: snapshot.visual?.isFocused,
+            isHovered: snapshot.visual?.isHovered,
+            scrollOffset: offset,
+            contentSize: contentSize,
+            visibleRect: visibleRect
+        )
+        snapshot.visual = visual
+        viewRegistry[viewId] = snapshot
+        scheduleSnapshotWrite()
+    }
+
+    /// Update focus state for a view
+    public func updateFocusState(_ viewId: String, isFocused: Bool, isHovered: Bool = false) {
+        guard var snapshot = viewRegistry[viewId] else { return }
+        let visual = AwareSnapshot(
+            frame: snapshot.visual?.frame,
+            backgroundColor: snapshot.visual?.backgroundColor,
+            foregroundColor: snapshot.visual?.foregroundColor,
+            font: snapshot.visual?.font,
+            text: snapshot.visual?.text,
+            opacity: snapshot.visual?.opacity ?? 1.0,
+            isHidden: snapshot.visual?.isHidden ?? false,
+            isTextTruncated: snapshot.visual?.isTextTruncated,
+            intrinsicSize: snapshot.visual?.intrinsicSize,
+            lineCount: snapshot.visual?.lineCount,
+            maxLines: snapshot.visual?.maxLines,
+            isFocused: isFocused,
+            isHovered: isHovered,
+            scrollOffset: snapshot.visual?.scrollOffset,
+            contentSize: snapshot.visual?.contentSize,
+            visibleRect: snapshot.visual?.visibleRect
+        )
+        snapshot.visual = visual
+        viewRegistry[viewId] = snapshot
+        scheduleSnapshotWrite()
+    }
+
+    /// Update text overflow detection
+    public func updateTextOverflow(
+        _ viewId: String,
+        isTruncated: Bool,
+        intrinsicSize: CGSize,
+        lineCount: Int,
+        maxLines: Int
+    ) {
+        guard var snapshot = viewRegistry[viewId] else { return }
+        let visual = AwareSnapshot(
+            frame: snapshot.visual?.frame,
+            backgroundColor: snapshot.visual?.backgroundColor,
+            foregroundColor: snapshot.visual?.foregroundColor,
+            font: snapshot.visual?.font,
+            text: snapshot.visual?.text,
+            opacity: snapshot.visual?.opacity ?? 1.0,
+            isHidden: snapshot.visual?.isHidden ?? false,
+            isTextTruncated: isTruncated,
+            intrinsicSize: intrinsicSize,
+            lineCount: lineCount,
+            maxLines: maxLines,
+            isFocused: snapshot.visual?.isFocused,
+            isHovered: snapshot.visual?.isHovered,
+            scrollOffset: snapshot.visual?.scrollOffset,
+            contentSize: snapshot.visual?.contentSize,
+            visibleRect: snapshot.visual?.visibleRect
+        )
+        snapshot.visual = visual
+        viewRegistry[viewId] = snapshot
+        scheduleSnapshotWrite()
+    }
+
     // MARK: - Auto-Save to File
 
     /// Schedule a debounced write to the snapshot file
-    func scheduleSnapshotWrite() {
+    private func scheduleSnapshotWrite() {
         writeDebounceTask?.cancel()
         writeDebounceTask = Task {
             do {
@@ -389,76 +677,6 @@ public final class Aware: ObservableObject {
     }
 
 
-    // MARK: - Cache Management
-
-    /// Clean expired registrations (called automatically before snapshots)
-    public func cleanExpiredRegistrations() {
-        let before = viewRegistry.count
-        viewRegistry = viewRegistry.filter { _, registration in
-            !registration.isExpired
-        }
-        let removed = before - viewRegistry.count
-        if removed > 0 {
-            logger.debug("Aware: Cleaned \(removed) expired view registrations")
-        }
-    }
-
-    /// Clear all registrations for a specific session
-    public func clearSession(_ sessionId: String) {
-        let before = viewRegistry.count
-        viewRegistry = viewRegistry.filter { _, registration in
-            registration.sessionId != sessionId
-        }
-
-        // Also clear related state
-        let viewIds = viewRegistry.keys
-        stateRegistry = stateRegistry.filter { viewId, _ in
-            viewIds.contains(viewId)
-        }
-        parentChildMap = parentChildMap.filter { childId, parentId in
-            viewIds.contains(childId) && viewIds.contains(parentId)
-        }
-
-        let removed = before - viewRegistry.count
-        logger.info("Aware: Cleared session '\(sessionId)' - removed \(removed) registrations")
-    }
-
-    /// Clear all registrations for a specific project
-    public func clearProject(_ projectId: String) {
-        let before = viewRegistry.count
-        viewRegistry = viewRegistry.filter { _, registration in
-            registration.projectId != projectId
-        }
-
-        // Also clear related state
-        let viewIds = viewRegistry.keys
-        stateRegistry = stateRegistry.filter { viewId, _ in
-            viewIds.contains(viewId)
-        }
-        parentChildMap = parentChildMap.filter { childId, parentId in
-            viewIds.contains(childId) && viewIds.contains(parentId)
-        }
-
-        let removed = before - viewRegistry.count
-        logger.info("Aware: Cleared project '\(projectId)' - removed \(removed) registrations")
-    }
-
-    /// Enforce size limit using LRU eviction
-    private func enforceSizeLimit() {
-        guard viewRegistry.count > maxRegistrations else { return }
-
-        let sorted = viewRegistry.sorted { $0.value.lastAccessedAt < $1.value.lastAccessedAt }
-        let toKeep = sorted.suffix(maxRegistrations)
-
-        var newRegistry: [String: AwareViewRegistration] = [:]
-        for (key, value) in toKeep {
-            newRegistry[key] = value
-        }
-        viewRegistry = newRegistry
-
-        logger.warning("Aware: Registry size limit enforced - evicted \(sorted.count - maxRegistrations) least recently used views")
-    }
-
     /// Clear all registered views
     public func reset() {
         viewRegistry.removeAll()
@@ -467,13 +685,7 @@ public final class Aware: ObservableObject {
         gestureCallbacks.removeAll()
         parameterizedGestureCallbacks.removeAll()
         textBindings.removeAll()
-        actionCallbacks.removeAll()
-        propStateBindings.removeAll()
-        stalenessWarnings.removeAll()
-        identityRegistry.removeAll()
-        pendingIdentityChecks.removeAll()
         registryVersion = 0
-        logger.info("Aware: Full reset completed")
     }
 }
 

@@ -40,7 +40,7 @@ public struct AwareProtocolGenerator {
     }
 
     /// Generate lightweight stub implementations (50-100 LOC)
-    public func generateStubs(platform: Platform, language: Language) -> ProtocolStubsResult {
+    public func generateStubs(platform: AwarePlatform, language: Language) -> ProtocolStubsResult {
         guard language == .swift else {
             return ProtocolStubsResult(
                 code: "",
@@ -487,7 +487,7 @@ public struct AwareProtocolGenerator {
         """
     }
 
-    private func generateStubInstructions(platform: Platform, modifierCount: Int) -> String {
+    private func generateStubInstructions(platform: AwarePlatform, modifierCount: Int) -> String {
         """
         Add this to your project once. No Aware dependency needed.
 
@@ -498,7 +498,7 @@ public struct AwareProtocolGenerator {
         4. Validate with MCP tool: aware_validate_code
         5. Auto-fix with MCP tool: aware_fix_code
 
-        Platform: \(platform.rawValue)
+        AwarePlatform: \(platform.rawValue)
         Modifiers: \(modifierCount)
 
         Migration Path:
@@ -532,7 +532,7 @@ public struct ProtocolSpecificationResult: Codable, Sendable {
 public struct ProtocolStubsResult: Codable, Sendable {
     public let code: String              // Swift code (50-100 LOC)
     public let language: Language
-    public let platform: Platform
+    public let platform: AwarePlatform
     public let lineCount: Int
     public let modifiers: [String]       // Modifier names included
     public let instructions: String      // How to use
@@ -585,7 +585,7 @@ public struct ModifierPattern: Codable, Sendable {
     public let relatedModifiers: [String]
     public let commonMistakes: [String]
     public let tokenCost: Int
-    public let platform: Platform
+    public let platform: AwarePlatform
 }
 
 public struct PatternParameter: Codable, Sendable {

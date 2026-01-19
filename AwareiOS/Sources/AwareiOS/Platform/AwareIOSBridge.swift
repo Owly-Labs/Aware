@@ -8,10 +8,8 @@
 
 #if os(iOS)
 import Foundation
-import AwareCore
 
 #if canImport(AwareBridge)
-import AwareBridge
 #endif
 
 // MARK: - IPC Service
@@ -161,7 +159,7 @@ public final class AwareIPCService {
 
     // MARK: - Command Execution
 
-    public func sendCommand(_ command: AwareCommand) async throws -> AwareResult {
+    public func sendCommand(_ command: AwareIOSCommand) async throws -> AwareIOSResult {
         // Try WebSocket first if available
         #if canImport(AwareBridge)
         if let webSocketClient = webSocketClient, webSocketClient.isConnected {
@@ -174,7 +172,7 @@ public final class AwareIPCService {
     }
 
     #if canImport(AwareBridge)
-    private func sendCommandViaWebSocket(_ command: AwareCommand, client: WebSocketIPCClient) async throws -> AwareResult {
+    private func sendCommandViaWebSocket(_ command: AwareIOSCommand, client: WebSocketIPCClient) async throws -> AwareIOSResult {
         let mcpCommand = MCPCommand(
             action: .tap, // Map from AwareCommand
             parameters: command.parameters
@@ -183,13 +181,13 @@ public final class AwareIPCService {
         let result = try await client.sendCommand(mcpCommand)
 
         if result.success {
-            return AwareResult(
+            return AwareIOSResult(
                 success: true,
                 data: result.data ?? [:],
                 error: nil
             )
         } else {
-            return AwareResult(
+            return AwareIOSResult(
                 success: false,
                 data: nil,
                 error: result.error?.message
@@ -198,7 +196,7 @@ public final class AwareIPCService {
     }
     #endif
 
-    private func sendCommandViaFiles(_ command: AwareCommand) async throws -> AwareResult {
+    private func sendCommandViaFiles(_ command: AwareIOSCommand) async throws -> AwareIOSResult {
         let commandPath = ipcPath + "/ui_command.json"
         let resultPath = ipcPath + "/ui_result.json"
 
@@ -212,7 +210,7 @@ public final class AwareIPCService {
         while attempts < maxAttempts {
             if FileManager.default.fileExists(atPath: resultPath) {
                 let resultData = try Data(contentsOf: URL(fileURLWithPath: resultPath))
-                return try JSONDecoder().decode(AwareResult.self, from: resultData)
+                return try JSONDecoder().decode(AwareIOSResult.self, from: resultData)
             }
             try await Task.sleep(for: .milliseconds(100))
             attempts += 1
@@ -245,7 +243,7 @@ private final class WebSocketIPCClient {
     private var webSocketTask: URLSessionWebSocketTask?
     private var session: URLSession?
     private var isConnectedState = false
-    private var pendingResults: [String: CheckedContinuation<MCPResult, Error>] = [:]
+    private var pendingResults: [String: CheckedContinuation<AwareMCPResult, Error>] = [:]
     private var receiveTask: Task<Void, Never>?
 
     init(url: String) {
@@ -295,7 +293,7 @@ private final class WebSocketIPCClient {
         AwareLog.ipc.debug("WebSocket client disconnected")
     }
 
-    func sendCommand(_ command: MCPCommand) async throws -> MCPResult {
+    func sendCommand(_ command: MCPCommand) async throws -> AwareMCPResult {
         guard isConnected else {
             throw AwareIPCError.notConnected
         }
@@ -355,7 +353,7 @@ private final class WebSocketIPCClient {
         do {
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .iso8601
-            let result = try decoder.decode(MCPResult.self, from: data)
+            let result = try decoder.decode(AwareMCPResult.self, from: data)
 
             if let continuation = pendingResults.removeValue(forKey: result.commandId) {
                 continuation.resume(returning: result)
@@ -404,7 +402,7 @@ public enum AwareIPCError: Error {
 
 // MARK: - Legacy Types (for backward compatibility)
 
-public struct AwareCommand: Codable, Sendable {
+public struct AwareIOSCommand: Codable, Sendable {
     public let action: String
     public let parameters: [String: String]
 
@@ -414,7 +412,7 @@ public struct AwareCommand: Codable, Sendable {
     }
 }
 
-public struct AwareResult: Codable, Sendable {
+public struct AwareIOSResult: Codable, Sendable {
     public let success: Bool
     public let data: [String: String]?
     public let error: String?

@@ -13,9 +13,9 @@ import Foundation
 public struct CodeExample: Codable, Sendable, Hashable {
     public let code: String
     public let description: String
-    public let platform: Platform?
+    public let platform: AwarePlatform?
 
-    public init(code: String, description: String, platform: Platform? = nil) {
+    public init(code: String, description: String, platform: AwarePlatform? = nil) {
         self.code = code
         self.description = description
         self.platform = platform
@@ -89,8 +89,8 @@ public struct EnumCaseMetadata: Codable, Sendable, Hashable {
 
 // MARK: - Platform
 
-/// Platform availability
-public enum Platform: String, Codable, Sendable, CaseIterable {
+/// AwarePlatform availability
+public enum AwarePlatform: String, Codable, Sendable, CaseIterable {
     case iOS = "iOS"
     case macOS = "macOS"
     case web = "web"

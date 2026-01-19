@@ -11,13 +11,12 @@
 #if os(iOS)
 import UIKit
 import SwiftUI
-import AwareCore
 
-// MARK: - iOS Platform Implementation
+// MARK: - iOS AwarePlatform Implementation
 
 /// iOS platform service implementing AwarePlatform protocol
 @MainActor
-public final class AwareIOSPlatform: AwarePlatform {
+public final class AwareIOSPlatform: AwarePlatformProtocol {
     public static let shared = AwareIOSPlatform()
 
     // MARK: - AwarePlatform Protocol
@@ -56,7 +55,7 @@ public final class AwareIOSPlatform: AwarePlatform {
 
         isConfigured = true
 
-        AwareLog.platform.info("Platform configured with IPC path: \(config.ipcPath), transport: \(config.transportMode)")
+        AwareLog.platform.info("AwarePlatform configured with IPC path: \(config.ipcPath), transport: \(config.transportMode)")
     }
 
     /// Configure iOS platform with legacy options dictionary (backward compatibility)

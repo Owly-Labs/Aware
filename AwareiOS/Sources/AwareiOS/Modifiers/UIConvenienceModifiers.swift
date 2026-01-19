@@ -8,7 +8,6 @@
 
 #if os(iOS)
 import SwiftUI
-import AwareCore
 
 // MARK: - Loading State
 

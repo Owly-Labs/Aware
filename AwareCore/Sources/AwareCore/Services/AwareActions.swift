@@ -1,449 +1,537 @@
 //
 //  AwareActions.swift
-//  AwareCore
+//  Aware
 //
-//  Explicit type-safe action methods to replace generic executeAction().
-//  Provides LLM-friendly API with specific parameters and result types.
+//  Action execution methods for Aware framework.
+//  Extracted from AwareService.swift (Phase 3 Architecture Refactoring)
 //
 
 import Foundation
 import SwiftUI
+import os.log
 
-// MARK: - Explicit Action API
+// MARK: - Action Execution Extension
 
 extension Aware {
 
-    // MARK: - Tap & Gesture Actions
+    // MARK: - Action Execution
 
-    /// Tap a view by ID using direct callback (no mouse movement - ghost UI)
-    ///
-    /// **Token Cost:** ~25 tokens per call
-    /// **LLM Guidance:** Use for clicking buttons, triggering actions
-    ///
-    /// - Parameter viewId: View identifier to tap
-    /// - Returns: Tap result with success status and duration
-    @MainActor
-    public func tap(viewId: String) async -> AwareTapResult {
-        return await tapDirect(viewId)
-    }
+    public func executeAction(_ command: AwareCommand) async -> AwareResult {
+        logger.info("Aware: Executing action: \(command.action) on viewId: \(command.viewId ?? "nil")")
 
-    /// Long press a view by ID
-    ///
-    /// **Token Cost:** ~30 tokens per call
-    /// **LLM Guidance:** Use for context menus, drag initiation
-    ///
-    /// - Parameters:
-    ///   - viewId: View identifier
-    ///   - duration: Hold duration in seconds (default 0.5s)
-    /// - Returns: Tap result with action type .longPress
-    @MainActor
-    public func longPress(viewId: String, duration: TimeInterval = 0.5) async -> AwareTapResult {
-        return await longPressDirect(viewId)
-    }
-
-    /// Double tap a view by ID
-    ///
-    /// **Token Cost:** ~25 tokens per call
-    /// **LLM Guidance:** Use for quick actions, zoom gestures
-    ///
-    /// - Parameter viewId: View identifier
-    /// - Returns: Tap result with action type .doubleTap
-    @MainActor
-    public func doubleTap(viewId: String) async -> AwareTapResult {
-        return await self.doubleTap(viewId)
-    }
-
-    /// Swipe on a view in specified direction
-    ///
-    /// **Token Cost:** ~30 tokens per call
-    /// **LLM Guidance:** Use for dismissing, navigating, refreshing
-    ///
-    /// - Parameters:
-    ///   - viewId: View identifier
-    ///   - direction: Swipe direction (up, down, left, right)
-    /// - Returns: Swipe result with direction confirmation
-    @MainActor
-    public func swipe(viewId: String, direction: AwareSwipeDirection) async -> AwareSwipeResult {
-        let result = await self.swipe(viewId, direction: direction)
-        return AwareSwipeResult(
-            success: result.success,
-            viewId: viewId,
-            direction: direction.rawValue,
-            message: result.message
-        )
-    }
-
-    // MARK: - Text Input Actions
-
-    /// Set text field to specific value (replaces content)
-    ///
-    /// **Token Cost:** ~30 tokens per call
-    /// **LLM Guidance:** Use for filling forms, setting inputs
-    ///
-    /// - Parameters:
-    ///   - viewId: Text field identifier
-    ///   - text: New text value
-    /// - Returns: Text result with final value confirmation
-    @MainActor
-    public func setText(viewId: String, text: String) async -> AwareTextResult {
-        let internalResult = await setText(viewId, text: text)
-
-        return AwareTextResult(
-            success: internalResult.success,
-            viewId: viewId,
-            actionType: .setText,
-            text: text,
-            finalValue: getText(viewId),
-            message: internalResult.message
-        )
-    }
-
-    /// Append text to existing content
-    ///
-    /// **Token Cost:** ~30 tokens per call
-    /// **LLM Guidance:** Use for adding to existing text
-    ///
-    /// - Parameters:
-    ///   - viewId: Text field identifier
-    ///   - text: Text to append
-    /// - Returns: Text result with final value
-    @MainActor
-    public func appendText(viewId: String, text: String) async -> AwareTextResult {
-        let internalResult = await appendText(viewId, text: text)
-
-        return AwareTextResult(
-            success: internalResult.success,
-            viewId: viewId,
-            actionType: .appendText,
-            text: text,
-            finalValue: getText(viewId),
-            message: internalResult.message
-        )
-    }
-
-    /// Clear all text from field
-    ///
-    /// **Token Cost:** ~20 tokens per call
-    /// **LLM Guidance:** Use for resetting inputs
-    ///
-    /// - Parameter viewId: Text field identifier
-    /// - Returns: Text result confirming clear
-    @MainActor
-    public func clearText(viewId: String) async -> AwareTextResult {
-        let internalResult = await clearText(viewId)
-
-        return AwareTextResult(
-            success: internalResult.success,
-            viewId: viewId,
-            actionType: .clearText,
-            text: nil,
-            finalValue: "",
-            message: internalResult.message
-        )
-    }
-
-    /// Type text character-by-character (CGEvent simulation on macOS)
-    ///
-    /// **Token Cost:** ~35 tokens per call
-    /// **LLM Guidance:** Use when setText doesn't work (non-instrumented apps)
-    ///
-    /// - Parameters:
-    ///   - text: Text to type
-    ///   - viewId: Optional field identifier for focus context
-    /// - Returns: Text result with typed value
-    @MainActor
-    public func typeText(text: String, in viewId: String? = nil) async -> AwareTextResult {
-        // Type the text (uses platform-specific implementation)
-        let result = await self.type(text, in: viewId)
-
-        return AwareTextResult(
-            success: result.success,
-            viewId: viewId ?? "",
-            actionType: .type,
-            text: text,
-            finalValue: viewId != nil ? getText(viewId!) : nil,
-            message: result.message
-        )
-    }
-
-    // MARK: - Focus Management
-
-    /// Focus a specific view
-    ///
-    /// **Token Cost:** ~25 tokens per call
-    /// **LLM Guidance:** Use to move keyboard focus to input fields
-    ///
-    /// - Parameter viewId: View identifier to focus
-    /// - Returns: Focus result with newly focused view
-    @MainActor
-    public func focus(viewId: String) async -> AwareFocusResult {
-        let internalResult = await focus(viewId)
-
-        return AwareFocusResult(
-            success: internalResult.success,
-            focusedViewId: internalResult.success ? viewId : nil,
-            actionType: .focus,
-            message: internalResult.message
-        )
-    }
-
-    /// Blur current focused view
-    ///
-    /// **Token Cost:** ~20 tokens per call
-    /// **LLM Guidance:** Use to unfocus/dismiss keyboard
-    ///
-    /// - Returns: Focus result with previous focus
-    @MainActor
-    public func blurFocus() async -> AwareFocusResult {
-        let internalResult = await blur()
-
-        return AwareFocusResult(
-            success: internalResult.success,
-            focusedViewId: nil,
-            actionType: .blur,
-            message: internalResult.message
-        )
-    }
-
-    /// Focus next view in tab order
-    ///
-    /// **Token Cost:** ~25 tokens per call
-    /// **LLM Guidance:** Use to navigate forms with Tab key
-    ///
-    /// - Returns: Focus result with newly focused view
-    @MainActor
-    public func focusNextField() async -> AwareFocusResult {
-        let internalResult = await focusNext()
-
-        return AwareFocusResult(
-            success: internalResult.success,
-            focusedViewId: AwareFocusManager.shared.focusedViewId,
-            actionType: .focusNext,
-            message: internalResult.message
-        )
-    }
-
-    /// Focus previous view in tab order
-    ///
-    /// **Token Cost:** ~25 tokens per call
-    /// **LLM Guidance:** Use to navigate forms with Shift+Tab
-    ///
-    /// - Returns: Focus result with newly focused view
-    @MainActor
-    public func focusPreviousField() async -> AwareFocusResult {
-        let internalResult = await focusPrevious()
-
-        return AwareFocusResult(
-            success: internalResult.success,
-            focusedViewId: AwareFocusManager.shared.focusedViewId,
-            actionType: .focusPrevious,
-            message: internalResult.message
-        )
-    }
-
-    // MARK: - Navigation
-
-    /// Navigate back (pop navigation stack)
-    ///
-    /// **Token Cost:** ~20 tokens per call
-    /// **LLM Guidance:** Use to go back in navigation hierarchy
-    ///
-    /// - Returns: Navigation result
-    @MainActor
-    public func navigateBack() async -> AwareNavigationResult {
-        let success = await goBack()
-
-        return AwareNavigationResult(
-            success: success.success,
-            actionType: .goBack,
-            message: success.message
-        )
-    }
-
-    /// Dismiss current modal/sheet
-    ///
-    /// **Token Cost:** ~20 tokens per call
-    /// **LLM Guidance:** Use to close modals, sheets, popovers
-    ///
-    /// - Returns: Navigation result
-    @MainActor
-    public func dismissModal() async -> AwareNavigationResult {
-        let success = await dismiss()
-
-        return AwareNavigationResult(
-            success: success.success,
-            actionType: .dismiss,
-            message: success.message
-        )
-    }
-
-    // MARK: - Query & Snapshot
-
-    /// Find views matching query (by ID substring, label, text)
-    ///
-    /// **Token Cost:** ~50 tokens per result
-    /// **LLM Guidance:** Use to discover available views before interaction
-    ///
-    /// - Parameters:
-    ///   - query: Search query string
-    ///   - matchType: How to match (idContains, label, etc.)
-    /// - Returns: Find result with matching view IDs
-    @MainActor
-    public func find(query: String, matchType: FindMatchType = .idContains) async -> AwareFindResult {
-        var matches: [String] = []
-
-        switch matchType {
-        case .idContains:
-            matches = registeredViewIds.filter { $0.contains(query) }
-        case .idExact:
-            matches = registeredViewIds.filter { $0 == query }
-        case .label:
-            matches = registeredViewIds.filter { id in
-                describeView(id)?.label?.contains(query) == true
+        switch command.action {
+        case "tap":
+            guard let viewId = command.viewId else {
+                return .error("tap requires viewId")
             }
-        case .tappable:
-            matches = listRegisteredActions().sorted()
-        case .focused:
-            if let focused = AwareFocusManager.shared.focusedViewId {
-                matches = [focused]
+            guard let callback = actionCallbacks[viewId] else {
+                return .error("No action registered for '\(viewId)'. Available: \(Array(actionCallbacks.keys).prefix(10))")
             }
+
+            // Ensure callback executes on MainActor for SwiftUI state updates
+            await Task { @MainActor in
+                await callback()
+            }.value
+
+            // Brief delay to allow SwiftUI to process state changes
+            try? await Task.sleep(nanoseconds: 50_000_000) // 50ms
+
+            return .success("Tapped '\(viewId)'")
+
+        case "type":
+            guard let viewId = command.viewId else {
+                return .error("type requires viewId")
+            }
+            guard let text = command.value else {
+                return .error("type requires value (text to input)")
+            }
+            NotificationCenter.default.post(
+                name: Notification.Name("AwareTextInput"),
+                object: nil,
+                userInfo: ["viewId": viewId, "text": text]
+            )
+            return .success("Typed '\(text)' into '\(viewId)'")
+
+        case "assert":
+            guard let viewId = command.viewId else {
+                return .error("assert requires viewId")
+            }
+            guard let key = command.key else {
+                return .error("assert requires key (state key to check)")
+            }
+            guard let actual = getStateValue(viewId, key: key) else {
+                return .error("No state '\(key)' found for view '\(viewId)'")
+            }
+            if let expected = command.value {
+                if actual == expected {
+                    return AwareResult(status: "success", message: "Assert passed: \(key)=\(actual)", actual: actual)
+                } else {
+                    return AwareResult(status: "error", message: "Assert failed: expected '\(expected)' but got '\(actual)'", actual: actual)
+                }
+            }
+            return AwareResult(status: "success", message: "State found", actual: actual)
+
+        case "snapshot":
+            let snapshot = captureSnapshot(format: .compact)
+            return AwareResult(
+                status: "success",
+                message: "Captured \(snapshot.viewCount) views",
+                viewCount: snapshot.viewCount,
+                snapshot: snapshot
+            )
+
+        case "find":
+            guard let viewId = command.viewId else {
+                return .error("find requires viewId (partial match)")
+            }
+            let matches = viewRegistry.keys.filter { $0.contains(viewId) }
+            return AwareResult(
+                status: "success",
+                message: "Found \(matches.count) matches: \(matches.prefix(10).joined(separator: ", "))",
+                viewCount: matches.count
+            )
+
+        // iOS Gesture Commands
+        case "longPress":
+            guard let viewId = command.viewId else {
+                return .error("longPress requires viewId")
+            }
+            let result = await longPressDirect(viewId)
+            return result.success ? .success(result.message) : .error(result.message)
+
+        case "doubleTap":
+            guard let viewId = command.viewId else {
+                return .error("doubleTap requires viewId")
+            }
+            let result = await doubleTap(viewId)
+            return result.success ? .success(result.message) : .error(result.message)
+
+        case "swipe":
+            guard let viewId = command.viewId else {
+                return .error("swipe requires viewId")
+            }
+            guard let directionStr = command.value,
+                  let direction = AwareSwipeDirection(rawValue: directionStr) else {
+                return .error("swipe requires value (direction: up/down/left/right)")
+            }
+            let result = await swipe(viewId, direction: direction)
+            return result.success ? .success(result.message) : .error(result.message)
+
+        // Text Commands
+        case "setText":
+            guard let viewId = command.viewId else {
+                return .error("setText requires viewId")
+            }
+            guard let text = command.value else {
+                return .error("setText requires value (text to set)")
+            }
+            let result = await setText(viewId, text: text)
+            return result.success ? .success(result.message) : .error(result.message)
+
+        case "appendText":
+            guard let viewId = command.viewId else {
+                return .error("appendText requires viewId")
+            }
+            guard let text = command.value else {
+                return .error("appendText requires value (text to append)")
+            }
+            let result = await appendText(viewId, text: text)
+            return result.success ? .success(result.message) : .error(result.message)
+
+        case "clearText":
+            guard let viewId = command.viewId else {
+                return .error("clearText requires viewId")
+            }
+            let result = await clearText(viewId)
+            return result.success ? .success(result.message) : .error(result.message)
+
+        // Focus Commands
+        case "focus":
+            guard let viewId = command.viewId else {
+                return .error("focus requires viewId")
+            }
+            let result = await focus(viewId)
+            return result.success ? .success(result.message) : .error(result.message)
+
+        case "blur":
+            let result = await blur()
+            return result.success ? .success(result.message) : .error(result.message)
+
+        case "focusNext":
+            let result = await focusNext()
+            return result.success ? .success(result.message) : .error(result.message)
+
+        case "focusPrevious":
+            let result = await focusPrevious()
+            return result.success ? .success(result.message) : .error(result.message)
+
+        // Navigation Commands
+        case "back":
+            let result = await goBack()
+            return result.success ? .success(result.message) : .error(result.message)
+
+        case "dismiss":
+            let result = await dismiss()
+            return result.success ? .success(result.message) : .error(result.message)
+
         default:
-            matches = []
+            return .error("Unknown action: \(command.action). Supported: tap, longPress, doubleTap, swipe, type, setText, appendText, clearText, focus, blur, focusNext, focusPrevious, back, dismiss, assert, snapshot, find")
+        }
+    }
+
+    // MARK: - iOS Gesture Execution
+
+    public func gesture(_ viewId: String, type: AwareGestureType, parameters: AwareGestureParameters? = nil) async -> AwareTapResult {
+        guard let registration = viewRegistry[viewId] else {
+            return AwareTapResult(success: false, viewId: viewId, message: "View '\(viewId)' not found")
+        }
+        let snapshot = registration.snapshot
+
+        guard snapshot.isVisible else {
+            return AwareTapResult(success: false, viewId: viewId, message: "View '\(viewId)' is not visible")
         }
 
-        return AwareFindResult(
-            success: !matches.isEmpty,
-            matches: matches,
-            query: query,
-            message: matches.isEmpty ? "No matches found for '\(query)'" : "Found \(matches.count) matches"
-        )
-    }
-
-    /// Capture full UI snapshot
-    ///
-    /// **Token Cost:** ~100-120 tokens (compact), ~200-300 (text)
-    /// **LLM Guidance:** Use to understand current UI state before actions
-    ///
-    /// - Parameters:
-    ///   - format: Output format (default .compact for LLM optimization)
-    ///   - includeHidden: Include hidden views (default false)
-    /// - Returns: Snapshot result with formatted content
-    @MainActor
-    public func snapshot(format: AwareSnapshotFormat = .compact, includeHidden: Bool = false) async -> AwareSnapshotResult {
-        return captureSnapshot(format: format, includeHidden: includeHidden)
-    }
-
-    // MARK: - Assertions
-
-    /// Assert view exists in registry
-    ///
-    /// **Token Cost:** ~20 tokens per call
-    /// **LLM Guidance:** Use to verify view presence before interaction
-    ///
-    /// - Parameter viewId: View identifier
-    /// - Returns: Assertion result
-    @MainActor
-    public func assertExists(viewId: String) async -> AwareAssertionResult {
-        let exists = registeredViewIds.contains(viewId)
-        return AwareAssertionResult(
-            passed: exists,
-            viewId: viewId,
-            key: "exists",
-            expected: "true",
-            actual: "\(exists)",
-            message: exists ? "View '\(viewId)' exists" : "View '\(viewId)' not found"
-        )
-    }
-
-    /// Assert view is visible
-    ///
-    /// **Token Cost:** ~25 tokens per call
-    /// **LLM Guidance:** Use to verify view visibility before interaction
-    ///
-    /// - Parameter viewId: View identifier
-    /// - Returns: Assertion result
-    @MainActor
-    public func assertVisible(viewId: String) async -> AwareAssertionResult {
-        guard let viewDescription = describeView(viewId) else {
-            return AwareAssertionResult(
-                passed: false,
+        // Try parameterized callback first
+        if let callback = parameterizedGestureCallbacks[viewId]?[type] {
+            await callback(parameters ?? AwareGestureParameters())
+            return AwareTapResult(
+                success: true,
                 viewId: viewId,
-                key: "visible",
-                expected: "true",
-                actual: "not found",
-                message: "View '\(viewId)' not found"
+                message: "\(type.rawValue) gesture executed on '\(viewId)'"
             )
         }
 
-        return AwareAssertionResult(
-            passed: viewDescription.isVisible,
+        // Try simple callback
+        if let callback = gestureCallbacks[viewId]?[type] {
+            await callback()
+            return AwareTapResult(
+                success: true,
+                viewId: viewId,
+                message: "\(type.rawValue) gesture executed on '\(viewId)'"
+            )
+        }
+
+        return AwareTapResult(
+            success: false,
             viewId: viewId,
-            key: "visible",
-            expected: "true",
-            actual: "\(viewDescription.isVisible)",
-            message: viewDescription.isVisible ? "View '\(viewId)' is visible" : "View '\(viewId)' is hidden"
+            message: "No \(type.rawValue) gesture registered for '\(viewId)'"
         )
     }
 
-    /// Assert view has specific state value
-    ///
-    /// **Token Cost:** ~30 tokens per call
-    /// **LLM Guidance:** Use to verify state before/after actions
-    ///
-    /// - Parameters:
-    ///   - viewId: View identifier
-    ///   - key: State key to check
-    ///   - expected: Expected value
-    /// - Returns: Assertion result with actual value
-    @MainActor
-    public func assertState(viewId: String, key: String, equals expected: String) async -> AwareAssertionResult {
-        let actual = getStateValue(viewId, key: key)
-        let passed = actual == expected
+    /// Swipe on a view (iOS)
+    @discardableResult
+    public func swipe(_ viewId: String, direction: AwareSwipeDirection) async -> AwareTapResult {
+        let gestureType: AwareGestureType
+        switch direction {
+        case .up: gestureType = .swipeUp
+        case .down: gestureType = .swipeDown
+        case .left: gestureType = .swipeLeft
+        case .right: gestureType = .swipeRight
+        }
 
-        return AwareAssertionResult(
-            passed: passed,
+        return await gesture(viewId, type: gestureType, parameters: AwareGestureParameters(direction: direction))
+    }
+
+    /// Long press on a view using callback (iOS)
+    @discardableResult
+    public func longPressDirect(_ viewId: String) async -> AwareTapResult {
+        return await gesture(viewId, type: .longPress)
+    }
+
+    /// Double tap on a view (iOS)
+    @discardableResult
+    public func doubleTap(_ viewId: String) async -> AwareTapResult {
+        return await gesture(viewId, type: .doubleTap)
+    }
+
+    /// Pinch gesture on a view (iOS)
+    @discardableResult
+    public func pinch(_ viewId: String, scale: CGFloat) async -> AwareTapResult {
+        let type: AwareGestureType = scale > 1.0 ? .pinchOut : .pinchIn
+        return await gesture(viewId, type: type, parameters: AwareGestureParameters(scale: scale))
+    }
+
+
+    // MARK: - Text Manipulation
+
+    public func setText(_ viewId: String, text: String) async -> AwareTapResult {
+        guard let binding = textBindings[viewId] else {
+            // Fallback to notification
+            NotificationCenter.default.post(
+                name: Notification.Name("AwareTextInput"),
+                object: nil,
+                userInfo: ["viewId": viewId, "text": text]
+            )
+            return AwareTapResult(
+                success: true,
+                viewId: viewId,
+                message: "Posted text notification for '\(viewId)' (no binding registered)"
+            )
+        }
+
+        binding.setValue(text)
+        return AwareTapResult(success: true, viewId: viewId, message: "Set text to '\(text)' in '\(viewId)'")
+    }
+
+    /// Append text to a field
+    @discardableResult
+    public func appendText(_ viewId: String, text: String) async -> AwareTapResult {
+        guard let binding = textBindings[viewId] else {
+            return AwareTapResult(success: false, viewId: viewId, message: "No text binding for '\(viewId)'")
+        }
+
+        binding.append(text)
+        return AwareTapResult(success: true, viewId: viewId, message: "Appended '\(text)' to '\(viewId)'")
+    }
+
+    /// Clear text in a field
+    @discardableResult
+    public func clearText(_ viewId: String) async -> AwareTapResult {
+        guard let binding = textBindings[viewId] else {
+            return AwareTapResult(success: false, viewId: viewId, message: "No text binding for '\(viewId)'")
+        }
+
+        binding.clear()
+        return AwareTapResult(success: true, viewId: viewId, message: "Cleared text in '\(viewId)'")
+    }
+
+    /// Get current text value from binding
+    public func getText(_ viewId: String) -> String? {
+        textBindings[viewId]?.value
+    }
+
+
+    // MARK: - Focus Control
+
+    public func focus(_ viewId: String) async -> AwareTapResult {
+        let success = AwareFocusManager.shared.focus(viewId)
+        return AwareTapResult(
+            success: success,
             viewId: viewId,
-            key: key,
-            expected: expected,
-            actual: actual,
-            message: passed
-                ? "State '\(key)' equals '\(expected)'"
-                : "State '\(key)' is '\(actual ?? "nil")', expected '\(expected)'"
+            message: success ? "Focused '\(viewId)'" : "Could not focus '\(viewId)'"
         )
     }
 
-    /// Assert view count matches expected
-    ///
-    /// **Token Cost:** ~20 tokens per call
-    /// **LLM Guidance:** Use to verify list/collection size
-    ///
-    /// - Parameter expected: Expected view count
-    /// - Returns: Assertion result
-    @MainActor
-    public func assertViewCount(_ expected: Int) async -> AwareAssertionResult {
-        let actual = registeredViewIds.count
-        let passed = actual == expected
-
-        return AwareAssertionResult(
-            passed: passed,
-            viewId: "",
-            key: "viewCount",
-            expected: "\(expected)",
-            actual: "\(actual)",
-            message: passed
-                ? "View count is \(actual)"
-                : "View count is \(actual), expected \(expected)"
+    /// Blur (unfocus) the current view
+    @discardableResult
+    public func blur() async -> AwareTapResult {
+        let previousFocus = AwareFocusManager.shared.focusedViewId
+        AwareFocusManager.shared.blur()
+        return AwareTapResult(
+            success: true,
+            viewId: previousFocus ?? "",
+            message: "Blurred focus"
         )
     }
-}
 
-// MARK: - Supporting Types
+    /// Focus next field in tab order
+    @discardableResult
+    public func focusNext() async -> AwareTapResult {
+        let success = AwareFocusManager.shared.focusNext()
+        return AwareTapResult(
+            success: success,
+            viewId: AwareFocusManager.shared.focusedViewId ?? "",
+            message: success ? "Focused next field" : "No next field to focus"
+        )
+    }
 
-public enum FindMatchType: String, Sendable {
-    case idContains      // Partial match on viewId
-    case idExact         // Exact match on viewId
-    case label           // Match on label
-    case text            // Match on visual text
-    case tappable        // All tappable views
-    case focused         // Currently focused view
+    /// Focus previous field in tab order
+    @discardableResult
+    public func focusPrevious() async -> AwareTapResult {
+        let success = AwareFocusManager.shared.focusPrevious()
+        return AwareTapResult(
+            success: success,
+            viewId: AwareFocusManager.shared.focusedViewId ?? "",
+            message: success ? "Focused previous field" : "No previous field to focus"
+        )
+    }
+
+
+    // MARK: - Navigation
+
+    public func goBack() async -> AwareTapResult {
+        let success = await AwareNavigationManager.shared.goBack()
+        return AwareTapResult(
+            success: success,
+            viewId: AwareNavigationManager.shared.currentContext ?? "",
+            message: success ? "Navigated back" : "Could not navigate back"
+        )
+    }
+
+    /// Dismiss current modal (delegates to AwareNavigationManager)
+    @discardableResult
+    public func dismiss() async -> AwareTapResult {
+        let success = await AwareNavigationManager.shared.dismiss()
+        return AwareTapResult(
+            success: success,
+            viewId: AwareNavigationManager.shared.currentContext ?? "",
+            message: success ? "Dismissed modal" : "Could not dismiss"
+        )
+    }
+
+
+    // MARK: - Tap Actions
+
+    public func tapDirect(_ viewId: String) async -> AwareTapResult {
+        guard let registration = viewRegistry[viewId] else {
+            return AwareTapResult(success: false, viewId: viewId, message: "View '\(viewId)' not found")
+        }
+        let snapshot = registration.snapshot
+
+        guard snapshot.isVisible else {
+            return AwareTapResult(success: false, viewId: viewId, message: "View '\(viewId)' is not visible")
+        }
+
+        // Check if direct action callback exists
+        guard let callback = actionCallbacks[viewId] else {
+            // Fallback: Post notification for views listening to tap events
+            NotificationCenter.default.post(
+                name: Notification.Name("Aware.DirectTap"),
+                object: nil,
+                userInfo: ["viewId": viewId]
+            )
+
+            // Brief delay for UI to settle after notification
+            do {
+                try await Task.sleep(nanoseconds: 100_000_000) // 100ms
+            } catch is CancellationError {
+                // Action cancelled, return early
+                return AwareTapResult(success: false, viewId: viewId, message: "Tap cancelled")
+            } catch {
+                // Unexpected error in delay, continue anyway
+            }
+
+            return AwareTapResult(
+                success: true,
+                viewId: viewId,
+                message: "Posted direct tap notification for '\(viewId)' (no callback registered)",
+                actionDescription: snapshot.action?.actionDescription
+            )
+        }
+
+        // Invoke the callback directly on MainActor
+        await Task { @MainActor in
+            await callback()
+        }.value
+
+        // Brief delay for UI to settle after callback and allow SwiftUI to process state changes
+        do {
+            try await Task.sleep(nanoseconds: 50_000_000) // 50ms
+        } catch is CancellationError {
+            // Action cancelled, but callback already invoked
+        } catch {
+            // Unexpected error in delay, continue anyway
+        }
+
+        NotificationCenter.default.post(
+            name: Notification.Name("Aware.DirectTap"),
+            object: nil,
+            userInfo: ["viewId": viewId, "invoked": true]
+        )
+
+        return AwareTapResult(
+            success: true,
+            viewId: viewId,
+            message: "Direct action invoked for '\(viewId)' (no mouse movement)",
+            actionDescription: snapshot.action?.actionDescription
+        )
+    }
+
+    /// Tap by view ID - uses CGEvent simulation on macOS
+    @discardableResult
+    public func tap(_ viewId: String) async -> AwareTapResult {
+        guard let registration = viewRegistry[viewId] else {
+            return AwareTapResult(success: false, viewId: viewId, message: "View '\(viewId)' not found")
+        }
+        let snapshot = registration.snapshot
+
+        guard snapshot.isVisible else {
+            return AwareTapResult(success: false, viewId: viewId, message: "View '\(viewId)' is not visible")
+        }
+
+        guard let frame = snapshot.frame else {
+            return AwareTapResult(success: false, viewId: viewId, message: "View '\(viewId)' has no frame")
+        }
+
+        let center = CGPoint(x: frame.midX, y: frame.midY)
+        return await tap(at: center, viewId: viewId)
+    }
+
+    /// Tap at coordinates - uses CGEvent simulation on macOS
+    @discardableResult
+    public func tap(at point: CGPoint, viewId: String? = nil) async -> AwareTapResult {
+        #if os(macOS)
+        let success = await AwareMouseInput.click(at: point)
+        let resolvedViewId = viewId ?? findViewAt(point)?.id ?? "unknown"
+        return AwareTapResult(
+            success: success,
+            viewId: resolvedViewId,
+            message: success ? "Tapped at (\(Int(point.x)), \(Int(point.y)))" : "Tap failed"
+        )
+        #else
+        return AwareTapResult(success: false, viewId: viewId ?? "unknown", message: "CGEvent tap not available on iOS")
+        #endif
+    }
+
+    /// Long press by view ID
+    @discardableResult
+    public func longPress(_ viewId: String, duration: TimeInterval = 0.5) async -> AwareTapResult {
+        guard let registration = viewRegistry[viewId] else {
+            return AwareTapResult(success: false, viewId: viewId, message: "View '\(viewId)' not found")
+        }
+        let snapshot = registration.snapshot
+
+        guard let frame = snapshot.frame else {
+            return AwareTapResult(success: false, viewId: viewId, message: "View '\(viewId)' has no frame")
+        }
+
+        let center = CGPoint(x: frame.midX, y: frame.midY)
+        #if os(macOS)
+        let success = await AwareMouseInput.longPress(at: center, duration: duration)
+        return AwareTapResult(
+            success: success,
+            viewId: viewId,
+            message: success ? "Long pressed '\(viewId)' for \(duration)s" : "Long press failed"
+        )
+        #else
+        return AwareTapResult(success: false, viewId: viewId, message: "CGEvent long press not available on iOS")
+        #endif
+    }
+
+    /// Type text - optionally in a specific view
+    @discardableResult
+    public func type(_ text: String, in viewId: String? = nil) async -> AwareTapResult {
+        #if os(macOS)
+        if let viewId = viewId {
+            // First tap the view to focus it
+            let tapResult = await tap(viewId)
+            if !tapResult.success {
+                return AwareTapResult(success: false, viewId: viewId, message: "Failed to focus view '\(viewId)' before typing")
+            }
+
+            // Delay for focus to settle before typing
+            do {
+                try await Task.sleep(nanoseconds: 100_000_000) // 100ms
+            } catch is CancellationError {
+                // Typing cancelled, return early
+                return AwareTapResult(success: false, viewId: viewId, message: "Typing cancelled before text entry")
+            } catch {
+                // Unexpected error in delay, continue anyway
+            }
+        }
+        await AwareTextInput.type(text)
+        return AwareTapResult(success: true, viewId: viewId ?? "keyboard", message: "Typed \(text.count) characters")
+        #else
+        return AwareTapResult(success: false, viewId: viewId ?? "keyboard", message: "CGEvent typing not available on iOS")
+        #endif
+    }
+
+    /// Find view at a specific point
+    private func findViewAt(_ point: CGPoint) -> AwareViewSnapshot? {
+        viewRegistry.values.first { snapshot in
+            guard let frame = snapshot.frame else { return false }
+            return frame.contains(point)
+        }
+    }
+
 }

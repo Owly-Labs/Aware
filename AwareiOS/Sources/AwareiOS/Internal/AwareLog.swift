@@ -18,7 +18,7 @@ public enum AwareLog {
 
     // MARK: - Loggers
 
-    /// Platform-related logging (configuration, lifecycle)
+    /// AwarePlatform-related logging (configuration, lifecycle)
     public static let platform = Logger(subsystem: "com.aware.ios", category: "platform")
 
     /// IPC-related logging (file-based, WebSocket)

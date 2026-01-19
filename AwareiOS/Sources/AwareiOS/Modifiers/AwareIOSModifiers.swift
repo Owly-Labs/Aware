@@ -11,7 +11,6 @@
 
 #if os(iOS)
 import SwiftUI
-import AwareCore
 
 // MARK: - iOS-Specific View Modifiers
 

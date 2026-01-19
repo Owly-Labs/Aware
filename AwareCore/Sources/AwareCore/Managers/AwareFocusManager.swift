@@ -77,6 +77,13 @@ public final class AwareFocusManager: ObservableObject {
     @discardableResult
     public func focus(_ viewId: String) -> Bool {
         guard let binding = focusBindings[viewId] else {
+            // Log failure - element not registered
+            Task {
+                await AwareCentralLogger.shared.logFocus(
+                    elementId: viewId,
+                    action: "focus_failed_not_registered"
+                )
+            }
             return false
         }
 
@@ -88,6 +95,15 @@ public final class AwareFocusManager: ObservableObject {
         // Set new focus
         binding.wrappedValue = true
         focusedViewId = viewId
+
+        // Log success
+        Task {
+            await AwareCentralLogger.shared.logFocus(
+                elementId: viewId,
+                action: "focused"
+            )
+        }
+
         return true
     }
 
@@ -96,6 +112,14 @@ public final class AwareFocusManager: ObservableObject {
         if let current = focusedViewId {
             focusBindings[current]?.wrappedValue = false
             focusedViewId = nil
+
+            // Log blur action
+            Task {
+                await AwareCentralLogger.shared.logFocus(
+                    elementId: current,
+                    action: "blurred"
+                )
+            }
         }
     }
 
@@ -103,11 +127,22 @@ public final class AwareFocusManager: ObservableObject {
     /// - Returns: true if next view was focused
     @discardableResult
     public func focusNext() -> Bool {
+        let previousFocus = focusedViewId
+
         guard let current = focusedViewId,
               let currentIndex = focusOrder.firstIndex(of: current) else {
             // No current focus - focus the first field
             if let first = focusOrder.first {
-                return focus(first)
+                let success = focus(first)
+                if success {
+                    Task {
+                        await AwareCentralLogger.shared.logFocus(
+                            elementId: first,
+                            action: "focus_next_from_none"
+                        )
+                    }
+                }
+                return success
             }
             return false
         }
@@ -115,12 +150,31 @@ public final class AwareFocusManager: ObservableObject {
         // Try to focus next in order
         let nextIndex = currentIndex + 1
         if nextIndex < focusOrder.count {
-            return focus(focusOrder[nextIndex])
+            let nextId = focusOrder[nextIndex]
+            let success = focus(nextId)
+            if success {
+                Task {
+                    await AwareCentralLogger.shared.logFocus(
+                        elementId: nextId,
+                        action: "focus_next"
+                    )
+                }
+            }
+            return success
         }
 
         // Wrap around to first
         if let first = focusOrder.first {
-            return focus(first)
+            let success = focus(first)
+            if success {
+                Task {
+                    await AwareCentralLogger.shared.logFocus(
+                        elementId: first,
+                        action: "focus_next_wrapped"
+                    )
+                }
+            }
+            return success
         }
 
         return false
@@ -134,19 +188,47 @@ public final class AwareFocusManager: ObservableObject {
               let currentIndex = focusOrder.firstIndex(of: current) else {
             // No current focus - focus the last field
             if let last = focusOrder.last {
-                return focus(last)
+                let success = focus(last)
+                if success {
+                    Task {
+                        await AwareCentralLogger.shared.logFocus(
+                            elementId: last,
+                            action: "focus_previous_from_none"
+                        )
+                    }
+                }
+                return success
             }
             return false
         }
 
         // Try to focus previous in order
         if currentIndex > 0 {
-            return focus(focusOrder[currentIndex - 1])
+            let prevId = focusOrder[currentIndex - 1]
+            let success = focus(prevId)
+            if success {
+                Task {
+                    await AwareCentralLogger.shared.logFocus(
+                        elementId: prevId,
+                        action: "focus_previous"
+                    )
+                }
+            }
+            return success
         }
 
         // Wrap around to last
         if let last = focusOrder.last {
-            return focus(last)
+            let success = focus(last)
+            if success {
+                Task {
+                    await AwareCentralLogger.shared.logFocus(
+                        elementId: last,
+                        action: "focus_previous_wrapped"
+                    )
+                }
+            }
+            return success
         }
 
         return false

@@ -32,7 +32,7 @@ public struct AwareOpenAPIGenerator {
             ]
         ]
 
-        return try! JSONSerialization.data(withJSONObject: spec, options: [.prettyPrinted, .sortedKeys]).utf8String
+        return try! JSONSerialization.data(withJSONObject: spec, options: [.prettyPrinted, .sortedKeys]).utf8StringOrEmpty
     }
 
     private func generatePaths() -> [String: Any] {

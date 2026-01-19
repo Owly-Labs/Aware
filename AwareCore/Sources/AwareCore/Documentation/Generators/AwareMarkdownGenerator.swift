@@ -82,7 +82,7 @@ public struct AwareMarkdownGenerator {
                 output += "**Example:**\n```swift\n\(example.code)\n```\n\n"
             }
 
-            output += "**Platform**: \(modifier.platform.displayName)  \n"
+            output += "**AwarePlatform**: \(modifier.platform.displayName)  \n"
             output += "**Since**: \(modifier.since)\n\n"
             output += "---\n\n"
         }

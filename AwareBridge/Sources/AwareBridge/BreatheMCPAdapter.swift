@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import AwareCore
 
 // MARK: - Breathe MCP Adapter
 
@@ -21,7 +20,7 @@ public final class BreatheMCPAdapter: @unchecked Sendable {
     // MARK: - Dependencies
 
     private let bridge: WebSocketBridge
-    private var pendingResults: [String: CheckedContinuation<MCPResult, Never>] = [:]
+    private var pendingResults: [String: CheckedContinuation<AwareMCPResult, Never>] = [:]
 
     // MARK: - Initialization
 
@@ -30,9 +29,9 @@ public final class BreatheMCPAdapter: @unchecked Sendable {
 
         // Register handlers
         bridge.onCommand { [weak self] command in
-            await self?.handleCommand(command) ?? MCPResult.failure(
+            await self?.handleCommand(command) ?? AwareMCPResult.failure(
                 commandId: command.id,
-                error: MCPError(code: "ADAPTER_ERROR", message: "Adapter not available")
+                error: AwareMCPError(code: "ADAPTER_ERROR", message: "Adapter not available")
             )
         }
 
@@ -40,7 +39,7 @@ public final class BreatheMCPAdapter: @unchecked Sendable {
             await self?.handleBatch(batch) ?? MCPBatchResult(
                 batchId: batch.id,
                 results: batch.commands.map { cmd in
-                    MCPResult.failure(commandId: cmd.id, error: MCPError(code: "ADAPTER_ERROR", message: "Adapter not available"))
+                    AwareMCPResult.failure(commandId: cmd.id, error: AwareMCPError(code: "ADAPTER_ERROR", message: "Adapter not available"))
                 }
             )
         }
@@ -205,7 +204,7 @@ public final class BreatheMCPAdapter: @unchecked Sendable {
 
     // MARK: - Command Execution
 
-    private func executeCommand(_ command: MCPCommand) async -> MCPResult {
+    private func executeCommand(_ command: MCPCommand) async -> AwareMCPResult {
         // This will be handled by the command handler which forwards to Aware
         return await withCheckedContinuation { continuation in
             pendingResults[command.id] = continuation
@@ -217,7 +216,7 @@ public final class BreatheMCPAdapter: @unchecked Sendable {
 
     private func executeBatch(_ batch: MCPBatch) async -> MCPBatchResult {
         // Execute commands sequentially
-        var results: [MCPResult] = []
+        var results: [AwareMCPResult] = []
 
         for command in batch.commands {
             let result = await executeCommand(command)
@@ -234,16 +233,16 @@ public final class BreatheMCPAdapter: @unchecked Sendable {
 
     // MARK: - Command Handlers
 
-    private func handleCommand(_ command: MCPCommand) async -> MCPResult {
+    private func handleCommand(_ command: MCPCommand) async -> AwareMCPResult {
         // This is called when bridge receives a command
         // Forward to Aware for execution
 
         // For now, return success (actual implementation will integrate with Aware)
-        return MCPResult.success(commandId: command.id, data: ["status": "executed"])
+        return AwareMCPResult.success(commandId: command.id, data: ["status": "executed"])
     }
 
     private func handleBatch(_ batch: MCPBatch) async -> MCPBatchResult {
-        var results: [MCPResult] = []
+        var results: [AwareMCPResult] = []
 
         for command in batch.commands {
             let result = await handleCommand(command)

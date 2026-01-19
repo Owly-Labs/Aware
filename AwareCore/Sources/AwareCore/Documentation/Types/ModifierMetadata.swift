@@ -18,7 +18,7 @@ public struct ModifierMetadata: Codable, Sendable, Hashable, Identifiable {
     public let fullSignature: String          // Full function signature
     public let parameters: [ParameterMetadata]
     public let returnType: String             // "some View"
-    public let platform: Platform             // .iOS, .macOS, .all
+    public let platform: AwarePlatform             // .iOS, .macOS, .all
     public let category: ModifierCategory     // .action, .state, .registration
     public let description: String            // What this modifier does
     public let examples: [CodeExample]        // Usage examples
@@ -38,7 +38,7 @@ public struct ModifierMetadata: Codable, Sendable, Hashable, Identifiable {
         fullSignature: String,
         parameters: [ParameterMetadata],
         returnType: String,
-        platform: Platform,
+        platform: AwarePlatform,
         category: ModifierCategory,
         description: String,
         examples: [CodeExample] = [],
@@ -94,7 +94,7 @@ public struct ModifierMetadata: Codable, Sendable, Hashable, Identifiable {
         "\(compactSignature) - \(description)"
     }
 
-    /// Platform badge
+    /// AwarePlatform badge
     public var platformBadge: String {
         switch platform {
         case .all: return "📱💻🌐"

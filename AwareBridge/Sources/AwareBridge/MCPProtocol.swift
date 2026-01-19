@@ -58,14 +58,14 @@ public enum MCPAction: String, Codable, Sendable {
 // MARK: - MCP Result
 
 /// MCP result from Aware app back to LLM/Breathe
-public struct MCPResult: Codable, Sendable {
+public struct AwareMCPResult: Codable, Sendable {
     public let commandId: String
     public let timestamp: Date
     public let success: Bool
     public let data: [String: String]?
-    public let error: MCPError?
+    public let error: AwareMCPError?
 
-    public init(commandId: String, timestamp: Date = Date(), success: Bool, data: [String: String]? = nil, error: MCPError? = nil) {
+    public init(commandId: String, timestamp: Date = Date(), success: Bool, data: [String: String]? = nil, error: AwareMCPError? = nil) {
         self.commandId = commandId
         self.timestamp = timestamp
         self.success = success
@@ -74,18 +74,18 @@ public struct MCPResult: Codable, Sendable {
     }
 
     /// Create success result
-    public static func success(commandId: String, data: [String: String]? = nil) -> MCPResult {
-        MCPResult(commandId: commandId, success: true, data: data, error: nil)
+    public static func success(commandId: String, data: [String: String]? = nil) -> AwareMCPResult {
+        AwareMCPResult(commandId: commandId, success: true, data: data, error: nil)
     }
 
     /// Create error result
-    public static func failure(commandId: String, error: MCPError) -> MCPResult {
-        MCPResult(commandId: commandId, success: false, data: nil, error: error)
+    public static func failure(commandId: String, error: AwareMCPError) -> AwareMCPResult {
+        AwareMCPResult(commandId: commandId, success: false, data: nil, error: error)
     }
 }
 
 /// MCP error types
-public struct MCPError: Codable, Sendable {
+public struct AwareMCPError: Codable, Sendable {
     public let code: String
     public let message: String
     public let details: [String: String]?
@@ -97,11 +97,11 @@ public struct MCPError: Codable, Sendable {
     }
 
     // Common error codes
-    public static let elementNotFound = MCPError(code: "ELEMENT_NOT_FOUND", message: "Element not found")
-    public static let actionFailed = MCPError(code: "ACTION_FAILED", message: "Action execution failed")
-    public static let timeout = MCPError(code: "TIMEOUT", message: "Operation timed out")
-    public static let invalidParameters = MCPError(code: "INVALID_PARAMETERS", message: "Invalid command parameters")
-    public static let notReady = MCPError(code: "NOT_READY", message: "UI not ready")
+    public static let elementNotFound = AwareMCPError(code: "ELEMENT_NOT_FOUND", message: "Element not found")
+    public static let actionFailed = AwareMCPError(code: "ACTION_FAILED", message: "Action execution failed")
+    public static let timeout = AwareMCPError(code: "TIMEOUT", message: "Operation timed out")
+    public static let invalidParameters = AwareMCPError(code: "INVALID_PARAMETERS", message: "Invalid command parameters")
+    public static let notReady = AwareMCPError(code: "NOT_READY", message: "UI not ready")
 }
 
 // MARK: - MCP Event
@@ -156,10 +156,10 @@ public struct MCPBatch: Codable, Sendable {
 public struct MCPBatchResult: Codable, Sendable {
     public let batchId: String
     public let timestamp: Date
-    public let results: [MCPResult]
+    public let results: [AwareMCPResult]
     public let allSucceeded: Bool
 
-    public init(batchId: String, timestamp: Date = Date(), results: [MCPResult]) {
+    public init(batchId: String, timestamp: Date = Date(), results: [AwareMCPResult]) {
         self.batchId = batchId
         self.timestamp = timestamp
         self.results = results

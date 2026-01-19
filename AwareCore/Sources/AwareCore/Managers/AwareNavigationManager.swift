@@ -51,6 +51,14 @@ public final class AwareNavigationManager: ObservableObject {
             contextParents[contextId] = parent
         }
         updateStackDepth()
+
+        // Log context change
+        Task {
+            await AwareCentralLogger.shared.logNavigation(
+                action: "set_context",
+                destination: contextId
+            )
+        }
     }
 
     /// Clear current context (used when navigating away)
@@ -98,12 +106,26 @@ public final class AwareNavigationManager: ObservableObject {
     @discardableResult
     public func goBack() async -> Bool {
         guard let context = currentContext else {
+            // Log failure - no context
+            Task {
+                await AwareCentralLogger.shared.logNavigation(
+                    action: "go_back_failed",
+                    destination: nil
+                )
+            }
             return false
         }
 
         // Try registered back callback first
         if let callback = backCallbacks[context] {
             await callback()
+            // Log success
+            Task {
+                await AwareCentralLogger.shared.logNavigation(
+                    action: "go_back",
+                    destination: context
+                )
+            }
             return true
         }
 
@@ -111,6 +133,13 @@ public final class AwareNavigationManager: ObservableObject {
         if let pathBinding = navigationPaths[context], !pathBinding.wrappedValue.isEmpty {
             pathBinding.wrappedValue.removeLast()
             updateStackDepth()
+            // Log success
+            Task {
+                await AwareCentralLogger.shared.logNavigation(
+                    action: "go_back_pop",
+                    destination: context
+                )
+            }
             return true
         }
 
@@ -118,6 +147,14 @@ public final class AwareNavigationManager: ObservableObject {
         if let parentContext = contextParents[context] {
             currentContext = parentContext
             return await goBack()
+        }
+
+        // Log failure - no back method available
+        Task {
+            await AwareCentralLogger.shared.logNavigation(
+                action: "go_back_failed",
+                destination: context
+            )
         }
 
         return false
@@ -129,10 +166,26 @@ public final class AwareNavigationManager: ObservableObject {
     public func dismiss() async -> Bool {
         guard let context = currentContext,
               let callback = dismissCallbacks[context] else {
+            // Log failure - no dismiss available
+            Task {
+                await AwareCentralLogger.shared.logNavigation(
+                    action: "dismiss_failed",
+                    destination: currentContext
+                )
+            }
             return false
         }
 
         await callback()
+
+        // Log success
+        Task {
+            await AwareCentralLogger.shared.logNavigation(
+                action: "dismiss",
+                destination: context
+            )
+        }
+
         return true
     }
 
@@ -143,6 +196,13 @@ public final class AwareNavigationManager: ObservableObject {
     public func navigate(to destination: String, in contextId: String? = nil) -> Bool {
         let context = contextId ?? currentContext
         guard let context = context else {
+            // Log failure - no context
+            Task {
+                await AwareCentralLogger.shared.logNavigation(
+                    action: "navigate_failed",
+                    destination: nil
+                )
+            }
             return false
         }
 
@@ -156,6 +216,14 @@ public final class AwareNavigationManager: ObservableObject {
             ]
         )
 
+        // Log navigation request
+        Task {
+            await AwareCentralLogger.shared.logNavigation(
+                action: "navigate",
+                destination: destination
+            )
+        }
+
         return true
     }
 
@@ -164,16 +232,39 @@ public final class AwareNavigationManager: ObservableObject {
     public func popToRoot() -> Bool {
         guard let context = currentContext,
               let pathBinding = navigationPaths[context] else {
+            // Log failure - no context or path
+            Task {
+                await AwareCentralLogger.shared.logNavigation(
+                    action: "pop_to_root_failed",
+                    destination: currentContext
+                )
+            }
             return false
         }
 
         if pathBinding.wrappedValue.isEmpty {
+            // Already at root - log as info
+            Task {
+                await AwareCentralLogger.shared.logNavigation(
+                    action: "pop_to_root_already_at_root",
+                    destination: context
+                )
+            }
             return false
         }
 
         // Clear the path
         pathBinding.wrappedValue = NavigationPath()
         updateStackDepth()
+
+        // Log success
+        Task {
+            await AwareCentralLogger.shared.logNavigation(
+                action: "pop_to_root",
+                destination: context
+            )
+        }
+
         return true
     }
 

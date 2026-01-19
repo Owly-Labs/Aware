@@ -2,17 +2,17 @@
 //  AwareProtocols.swift
 //  AwareCore
 //
-//  Platform abstraction protocols for cross-platform support.
+//  AwarePlatform abstraction protocols for cross-platform support.
 //
 
 import Foundation
 
-// MARK: - Platform Abstraction Protocol
+// MARK: - AwarePlatform Abstraction Protocol
 
-/// Platform-specific operations abstraction
+/// AwarePlatform-specific operations abstraction
 @MainActor
-public protocol AwarePlatform: Sendable {
-    /// Platform identifier (e.g., "iOS", "macOS", "web")
+public protocol AwarePlatformProtocol: Sendable {
+    /// AwarePlatform identifier (e.g., "iOS", "macOS", "web")
     var platformName: String { get }
 
     /// Configure platform-specific features

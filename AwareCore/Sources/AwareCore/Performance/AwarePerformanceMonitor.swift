@@ -27,8 +27,19 @@ public class AwarePerformanceMonitor: ObservableObject {
     /// Active operation tracking
     private var activeOperations: [String: Date] = [:]
 
+    /// Performance breakdown tracking (for Context-Rich Responses)
+    private var performanceBreakdowns: [String: [PerformanceBreakdownItem]] = [:]
+
     /// Maximum history size
     private let maxHistorySize = 100
+
+    /// Performance budget thresholds (in seconds)
+    private var budgets: [String: TimeInterval] = [
+        "snapshot": 0.1,      // 100ms
+        "action": 0.05,       // 50ms
+        "render": 0.016,      // 16ms (60fps)
+        "query": 0.01         // 10ms
+    ]
 
     private init() {}
 
@@ -79,6 +90,16 @@ public class AwarePerformanceMonitor: ObservableObject {
         )
 
         addToHistory(metrics)
+
+        // Log performance with budget threshold
+        let threshold = budgets[name] ?? 1.0 // Default 1s threshold
+        Task {
+            await AwareCentralLogger.shared.logPerformance(
+                operation: name,
+                duration: duration,
+                threshold: threshold
+            )
+        }
 
         return (result, metrics)
     }
@@ -154,7 +175,61 @@ public class AwarePerformanceMonitor: ObservableObject {
 
         addToHistory(metrics)
 
+        // Log performance
+        Task {
+            await AwareCentralLogger.shared.logPerformance(
+                operation: "tracked-operation",
+                duration: duration,
+                threshold: 1.0
+            )
+        }
+
         return metrics
+    }
+
+    // MARK: - Performance Breakdown (for Context-Rich Responses)
+
+    /// Record a sub-operation timing for breakdown analysis
+    ///
+    /// **LLM Guidance:** Use to track where time is spent within an operation
+    ///
+    /// - Parameters:
+    ///   - operationId: Parent operation ID
+    ///   - subOperation: Name of the sub-operation
+    ///   - duration: Duration in seconds
+    ///   - file: Source file (auto-captured)
+    ///   - line: Source line (auto-captured)
+    public func recordBreakdown(
+        _ operationId: String,
+        subOperation: String,
+        duration: TimeInterval,
+        file: String = #file,
+        line: Int = #line
+    ) {
+        let filename = (file as NSString).lastPathComponent
+        let item = PerformanceBreakdownItem(
+            operation: subOperation,
+            duration: duration,
+            file: filename,
+            line: line
+        )
+
+        performanceBreakdowns[operationId, default: []].append(item)
+    }
+
+    /// Get performance breakdown for an operation
+    ///
+    /// **LLM Guidance:** Use to identify bottlenecks in failed/slow operations
+    ///
+    /// - Parameter operationId: Operation identifier
+    /// - Returns: Array of breakdown items, sorted by duration (slowest first)
+    public func getBreakdown(_ operationId: String) -> [PerformanceBreakdownItem] {
+        return performanceBreakdowns[operationId]?.sorted { $0.duration > $1.duration } ?? []
+    }
+
+    /// Clear breakdown data for an operation
+    public func clearBreakdown(_ operationId: String) {
+        performanceBreakdowns.removeValue(forKey: operationId)
     }
 
     /// Get metrics for a completed operation
@@ -362,3 +437,5 @@ public struct OperationStatistics: Sendable {
         return "\(name): avg \(avgMs)ms (n=\(count))"
     }
 }
+
+// Note: PerformanceBreakdownItem is defined in HTTPTypes.swift

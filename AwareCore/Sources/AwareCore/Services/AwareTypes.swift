@@ -291,6 +291,59 @@ public struct AwareViewSnapshot: Sendable {
     }
 }
 
+// MARK: - View Registration (with Session/Project Isolation)
+
+/// Wrapper for view snapshots with session and project context for isolation
+public struct AwareViewRegistration: Sendable {
+    public let snapshot: AwareViewSnapshot
+    public let projectId: String?
+    public let sessionId: String?
+    public let registeredAt: Date
+    public let expiresAt: Date?
+    public var lastAccessedAt: Date
+
+    public init(
+        snapshot: AwareViewSnapshot,
+        projectId: String? = nil,
+        sessionId: String? = nil,
+        ttl: TimeInterval? = nil
+    ) {
+        self.snapshot = snapshot
+        self.projectId = projectId
+        self.sessionId = sessionId
+        let now = Date()
+        self.registeredAt = now
+        self.expiresAt = ttl.map { now.addingTimeInterval($0) }
+        self.lastAccessedAt = now
+    }
+
+    /// Check if registration is expired
+    public var isExpired: Bool {
+        guard let expiresAt = expiresAt else { return false }
+        return Date() > expiresAt
+    }
+
+    /// Check if registration matches the given context
+    public func matches(projectId: String? = nil, sessionId: String? = nil) -> Bool {
+        // If filtering by project, must match
+        if let filterProjectId = projectId {
+            guard self.projectId == filterProjectId else { return false }
+        }
+
+        // If filtering by session, must match
+        if let filterSessionId = sessionId {
+            guard self.sessionId == filterSessionId else { return false }
+        }
+
+        return true
+    }
+
+    /// Update last accessed time
+    public mutating func recordAccess() {
+        lastAccessedAt = Date()
+    }
+}
+
 // MARK: - View Node (for tree building)
 
 public struct AwareViewNode: Sendable {

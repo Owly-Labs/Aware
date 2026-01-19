@@ -48,7 +48,14 @@ public final class AwareInteractionCoordinator {
 
             // Delay between commands for UI to settle
             if commandDelay > 0 {
-                try? await Task.sleep(nanoseconds: commandDelay)
+                do {
+                    try await Task.sleep(nanoseconds: commandDelay)
+                } catch is CancellationError {
+                    // Command sequence cancelled
+                    break
+                } catch {
+                    // Unexpected error in delay, continue
+                }
             }
         }
 
@@ -83,7 +90,15 @@ public final class AwareInteractionCoordinator {
             if condition() {
                 return result
             }
-            try? await Task.sleep(nanoseconds: pollInterval)
+
+            do {
+                try await Task.sleep(nanoseconds: pollInterval)
+            } catch is CancellationError {
+                // Wait cancelled
+                return .error("Wait cancelled for condition after '\(command.action)'")
+            } catch {
+                // Unexpected error in delay, continue polling
+            }
         }
 
         return .error("Timeout waiting for condition after '\(command.action)' (waited \(effectiveTimeout)s)")
@@ -103,7 +118,15 @@ public final class AwareInteractionCoordinator {
             if result.passed {
                 return .success("View '\(viewId)' appeared")
             }
-            try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
+
+            do {
+                try await Task.sleep(nanoseconds: 100_000_000) // 100ms
+            } catch is CancellationError {
+                // Wait cancelled
+                return .error("Wait cancelled for view '\(viewId)'")
+            } catch {
+                // Unexpected error in delay, continue polling
+            }
         }
 
         return .error("Timeout waiting for view '\(viewId)' to appear")
@@ -130,7 +153,16 @@ public final class AwareInteractionCoordinator {
             if result.passed {
                 return .success("State '\(key)' matched '\(expectedValue)'")
             }
-            try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
+
+            do {
+                try await Task.sleep(nanoseconds: 100_000_000) // 100ms
+            } catch is CancellationError {
+                // Wait cancelled
+                let actual = Aware.shared.getStateValue(viewId, key: key) ?? "nil"
+                return .error("Wait cancelled for state '\(key)' (current: '\(actual)')")
+            } catch {
+                // Unexpected error in delay, continue polling
+            }
         }
 
         let actual = Aware.shared.getStateValue(viewId, key: key) ?? "nil"
@@ -154,7 +186,14 @@ public final class AwareInteractionCoordinator {
             }
 
             // Small delay between fields
-            try? await Task.sleep(nanoseconds: commandDelay)
+            do {
+                try await Task.sleep(nanoseconds: commandDelay)
+            } catch is CancellationError {
+                // Form filling cancelled
+                return .error("Form filling cancelled at field '\(viewId)'")
+            } catch {
+                // Unexpected error in delay, continue
+            }
         }
 
         return .success("Filled \(fields.count) form fields")
@@ -174,7 +213,15 @@ public final class AwareInteractionCoordinator {
 
         // Blur any focused field
         _ = await Aware.shared.blur()
-        try? await Task.sleep(nanoseconds: commandDelay)
+
+        do {
+            try await Task.sleep(nanoseconds: commandDelay)
+        } catch is CancellationError {
+            // Form submission cancelled after blur
+            return .error("Form submission cancelled")
+        } catch {
+            // Unexpected error in delay, continue
+        }
 
         // Tap submit
         let submitCommand = AwareCommand(action: "tap", viewId: submitButtonId)
@@ -200,7 +247,16 @@ public final class AwareInteractionCoordinator {
             if !result.success {
                 return .error("Failed to go back on attempt \(i + 1): \(result.message)")
             }
-            try? await Task.sleep(nanoseconds: commandDelay * 2) // Longer delay for navigation
+
+            // Longer delay for navigation to settle
+            do {
+                try await Task.sleep(nanoseconds: commandDelay * 2)
+            } catch is CancellationError {
+                // Navigation cancelled
+                return .error("Navigation cancelled after \(i + 1) back operations")
+            } catch {
+                // Unexpected error in delay, continue
+            }
         }
         return .success("Navigated back \(count) times")
     }
@@ -232,7 +288,14 @@ public final class AwareInteractionCoordinator {
             }
 
             // Wait for scroll to complete
-            try? await Task.sleep(nanoseconds: 200_000_000) // 200ms
+            do {
+                try await Task.sleep(nanoseconds: 200_000_000) // 200ms
+            } catch is CancellationError {
+                // Scroll search cancelled
+                return .error("Scroll search cancelled at scroll \(i + 1)")
+            } catch {
+                // Unexpected error in delay, continue
+            }
         }
 
         return .error("Could not find '\(targetViewId)' after \(maxScrolls) scrolls")

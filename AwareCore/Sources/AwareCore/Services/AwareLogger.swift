@@ -11,11 +11,12 @@ import os.log
 
 // MARK: - Log Level
 
-public enum AwareLogLevel: String, Sendable {
+public enum AwareLogLevel: String, Codable, Sendable {
     case debug
     case info
     case warning
     case error
+    case critical
 }
 
 // MARK: - UI Logger
@@ -120,6 +121,8 @@ public actor AwareLogger {
             logger.warning("\(line)")
         case .error:
             logger.error("\(line)")
+        case .critical:
+            logger.critical("\(line)")
         }
     }
 

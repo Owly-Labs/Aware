@@ -9,13 +9,12 @@
 #if os(macOS)
 import AppKit
 import SwiftUI
-import AwareCore
 
-// MARK: - macOS Platform Implementation
+// MARK: - macOS AwarePlatform Implementation
 
 /// macOS platform service implementing AwarePlatform protocol
 @MainActor
-public final class AwareMacOSPlatform: AwarePlatform {
+public final class AwareMacOSPlatform: AwarePlatformProtocol {
     public static let shared = AwareMacOSPlatform()
 
     // MARK: - AwarePlatform Protocol
@@ -45,7 +44,7 @@ public final class AwareMacOSPlatform: AwarePlatform {
         isConfigured = true
 
         #if DEBUG
-        print("AwareMacOS: Platform configured")
+        print("AwareMacOS: AwarePlatform configured")
         #endif
     }
 

@@ -37,7 +37,7 @@ public final class AwareDocumentationService: ObservableObject {
     // MARK: - Query Interface
 
     /// Query modifiers with optional filters
-    public func queryModifiers(platform: Platform? = nil, category: ModifierCategory? = nil) -> [ModifierMetadata] {
+    public func queryModifiers(platform: AwarePlatform? = nil, category: ModifierCategory? = nil) -> [ModifierMetadata] {
         registry.getModifiers(category: category, platform: platform)
     }
 
@@ -102,7 +102,7 @@ public final class AwareDocumentationService: ObservableObject {
 
     /// Export lightweight protocol stubs (50-100 LOC)
     /// For LLM code generation without framework import
-    public func exportProtocolStubs(platform: Platform = .all, language: Language = .swift) -> ProtocolStubsResult {
+    public func exportProtocolStubs(platform: AwarePlatform = .all, language: Language = .swift) -> ProtocolStubsResult {
         let generator = AwareProtocolGenerator(registry: registry)
         return generator.generateStubs(platform: platform, language: language)
     }
@@ -131,7 +131,7 @@ public final class AwareDocumentationService: ObservableObject {
     // MARK: - Convenience Exports
 
     /// Export to file
-    public func exportToFile(format: ExportFormat, path: String) throws {
+    public func exportToFile(format: AwareExportFormat, path: String) throws {
         let content: String
         switch format {
         case .compact:
@@ -152,7 +152,7 @@ public final class AwareDocumentationService: ObservableObject {
 
     /// Export all formats to directory
     public func exportAll(toDirectory dir: String) throws {
-        let formats: [(ExportFormat, String)] = [
+        let formats: [(AwareExportFormat, String)] = [
             (.compact, "aware-api-compact.txt"),
             (.jsonSchema, "aware-api-schema.json"),
             (.mermaid(.architecture), "aware-architecture.mmd"),
@@ -172,7 +172,7 @@ public final class AwareDocumentationService: ObservableObject {
 // MARK: - Export Format
 
 /// Export format options
-public enum ExportFormat: CustomStringConvertible {
+public enum AwareExportFormat: CustomStringConvertible {
     case compact
     case jsonSchema
     case mermaid(MermaidDiagramType)

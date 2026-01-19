@@ -112,7 +112,7 @@ public enum TypeCategory: String, Codable, Sendable, CaseIterable {
         case .metadata: return "Metadata"
         case .result: return "Results"
         case .error: return "Errors"
-        case .platform: return "Platform"
+        case .platform: return "AwarePlatform"
         case .state: return "State"
         case .testing: return "Testing"
         }

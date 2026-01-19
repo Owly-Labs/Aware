@@ -48,7 +48,7 @@ public struct AwareJSONSchemaGenerator {
 
         schema["definitions"] = definitions
 
-        return try! JSONSerialization.data(withJSONObject: schema, options: [.prettyPrinted, .sortedKeys]).utf8String
+        return try! JSONSerialization.data(withJSONObject: schema, options: [.prettyPrinted, .sortedKeys]).utf8StringOrEmpty
     }
 
     private func generateTypeSchema(_ type: TypeMetadata) -> [String: Any] {
@@ -82,7 +82,7 @@ public struct AwareJSONSchemaGenerator {
 }
 
 extension Data {
-    var utf8String: String {
+    var utf8StringOrEmpty: String {
         String(data: self, encoding: .utf8) ?? "{}"
     }
 }

@@ -33,7 +33,7 @@ public final class WebSocketBridge: @unchecked Sendable {
 
     private var isRunning = false
     private var eventBuffer: [MCPEvent] = []
-    private var commandHandler: ((MCPCommand) async -> MCPResult)?
+    private var commandHandler: ((MCPCommand) async -> AwareMCPResult)?
     private var batchHandler: ((MCPBatch) async -> MCPBatchResult)?
 
     // MARK: - Initialization
@@ -100,11 +100,19 @@ public final class WebSocketBridge: @unchecked Sendable {
         connections.removeAll()
 
         // Close server
-        try? await server?.close().get()
+        do {
+            try await server?.close().get()
+        } catch {
+            print("⚠️ WebSocketBridge: Error closing server: \(error.localizedDescription)")
+        }
         server = nil
 
         // Shutdown event loop
-        try? await eventLoop?.shutdownGracefully()
+        do {
+            try await eventLoop?.shutdownGracefully()
+        } catch {
+            print("⚠️ WebSocketBridge: Error shutting down event loop: \(error.localizedDescription)")
+        }
         eventLoop = nil
 
         isRunning = false
@@ -131,7 +139,7 @@ public final class WebSocketBridge: @unchecked Sendable {
     // MARK: - Command Handling
 
     /// Register command handler
-    public func onCommand(_ handler: @escaping (MCPCommand) async -> MCPResult) {
+    public func onCommand(_ handler: @escaping (MCPCommand) async -> AwareMCPResult) {
         self.commandHandler = handler
     }
 
@@ -143,8 +151,8 @@ public final class WebSocketBridge: @unchecked Sendable {
     /// Handle incoming command
     func handleCommand(_ command: MCPCommand, from ws: WebSocketConnection) async {
         guard let handler = commandHandler else {
-            let error = MCPError(code: "NO_HANDLER", message: "No command handler registered")
-            let result = MCPResult.failure(commandId: command.id, error: error)
+            let error = AwareMCPError(code: "NO_HANDLER", message: "No command handler registered")
+            let result = AwareMCPResult.failure(commandId: command.id, error: error)
             await sendResult(result, to: ws)
             return
         }
@@ -156,8 +164,8 @@ public final class WebSocketBridge: @unchecked Sendable {
     /// Handle incoming batch
     func handleBatch(_ batch: MCPBatch, from ws: WebSocketConnection) async {
         guard let handler = batchHandler else {
-            let error = MCPError(code: "NO_HANDLER", message: "No batch handler registered")
-            let results = batch.commands.map { MCPResult.failure(commandId: $0.id, error: error) }
+            let error = AwareMCPError(code: "NO_HANDLER", message: "No batch handler registered")
+            let results = batch.commands.map { AwareMCPResult.failure(commandId: $0.id, error: error) }
             let batchResult = MCPBatchResult(batchId: batch.id, results: results)
             await sendBatchResult(batchResult, to: ws)
             return
@@ -180,10 +188,31 @@ public final class WebSocketBridge: @unchecked Sendable {
         }
 
         // Broadcast to all connections
-        guard let payload = try? JSONEncoder().encode(event),
-              let payloadString = String(data: payload, encoding: .utf8),
-              let wrapper = try? JSONSerialization.data(withJSONObject: ["type": "event", "payload": payloadString]) else { return }
-        let text = String(data: wrapper, encoding: .utf8) ?? ""
+        let payload: Data
+        do {
+            payload = try JSONEncoder().encode(event)
+        } catch {
+            print("⚠️ WebSocketBridge: Failed to encode event: \(error.localizedDescription)")
+            return
+        }
+
+        guard let payloadString = String(data: payload, encoding: .utf8) else {
+            print("⚠️ WebSocketBridge: Failed to convert event payload to string")
+            return
+        }
+
+        let wrapper: Data
+        do {
+            wrapper = try JSONSerialization.data(withJSONObject: ["type": "event", "payload": payloadString])
+        } catch {
+            print("⚠️ WebSocketBridge: Failed to create event wrapper: \(error.localizedDescription)")
+            return
+        }
+
+        guard let text = String(data: wrapper, encoding: .utf8) else {
+            print("⚠️ WebSocketBridge: Failed to convert event wrapper to string")
+            return
+        }
 
         for connection in connections {
             connection.send(text)
@@ -191,20 +220,64 @@ public final class WebSocketBridge: @unchecked Sendable {
     }
 
     /// Send result to specific connection
-    func sendResult(_ result: MCPResult, to ws: WebSocketConnection) async {
-        guard let payload = try? JSONEncoder().encode(result),
-              let payloadString = String(data: payload, encoding: .utf8),
-              let wrapper = try? JSONSerialization.data(withJSONObject: ["type": "result", "payload": payloadString]) else { return }
-        let text = String(data: wrapper, encoding: .utf8) ?? ""
+    func sendResult(_ result: AwareMCPResult, to ws: WebSocketConnection) async {
+        let payload: Data
+        do {
+            payload = try JSONEncoder().encode(result)
+        } catch {
+            print("⚠️ WebSocketBridge: Failed to encode result: \(error.localizedDescription)")
+            return
+        }
+
+        guard let payloadString = String(data: payload, encoding: .utf8) else {
+            print("⚠️ WebSocketBridge: Failed to convert result payload to string")
+            return
+        }
+
+        let wrapper: Data
+        do {
+            wrapper = try JSONSerialization.data(withJSONObject: ["type": "result", "payload": payloadString])
+        } catch {
+            print("⚠️ WebSocketBridge: Failed to create result wrapper: \(error.localizedDescription)")
+            return
+        }
+
+        guard let text = String(data: wrapper, encoding: .utf8) else {
+            print("⚠️ WebSocketBridge: Failed to convert result wrapper to string")
+            return
+        }
+
         ws.send(text)
     }
 
     /// Send batch result to specific connection
     func sendBatchResult(_ result: MCPBatchResult, to ws: WebSocketConnection) async {
-        guard let payload = try? JSONEncoder().encode(result),
-              let payloadString = String(data: payload, encoding: .utf8),
-              let wrapper = try? JSONSerialization.data(withJSONObject: ["type": "batch_result", "payload": payloadString]) else { return }
-        let text = String(data: wrapper, encoding: .utf8) ?? ""
+        let payload: Data
+        do {
+            payload = try JSONEncoder().encode(result)
+        } catch {
+            print("⚠️ WebSocketBridge: Failed to encode batch result: \(error.localizedDescription)")
+            return
+        }
+
+        guard let payloadString = String(data: payload, encoding: .utf8) else {
+            print("⚠️ WebSocketBridge: Failed to convert batch result payload to string")
+            return
+        }
+
+        let wrapper: Data
+        do {
+            wrapper = try JSONSerialization.data(withJSONObject: ["type": "batch_result", "payload": payloadString])
+        } catch {
+            print("⚠️ WebSocketBridge: Failed to create batch result wrapper: \(error.localizedDescription)")
+            return
+        }
+
+        guard let text = String(data: wrapper, encoding: .utf8) else {
+            print("⚠️ WebSocketBridge: Failed to convert batch result wrapper to string")
+            return
+        }
+
         ws.send(text)
     }
 
@@ -343,26 +416,75 @@ private final class WebSocketHandler: ChannelInboundHandler {
     }
 
     private func handleMessage(_ text: String, context: ChannelHandlerContext) {
-        guard let data = text.data(using: .utf8),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let type = json["type"] as? String,
+        guard let data = text.data(using: .utf8) else {
+            print("⚠️ WebSocketHandler: Failed to convert message to data")
+            return
+        }
+
+        let json: [String: Any]
+        do {
+            guard let parsed = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                print("⚠️ WebSocketHandler: Invalid JSON format")
+                return
+            }
+            json = parsed
+        } catch {
+            print("⚠️ WebSocketHandler: Failed to parse JSON: \(error.localizedDescription)")
+            return
+        }
+
+        guard let type = json["type"] as? String,
               let ws = webSocket else { return }
 
         Task { @MainActor in
             switch type {
             case "command":
-                if let payload = json["payload"],
-                   let commandData = try? JSONSerialization.data(withJSONObject: payload),
-                   let command = try? JSONDecoder().decode(MCPCommand.self, from: commandData) {
-                    await bridge.handleCommand(command, from: ws)
+                guard let payload = json["payload"] else {
+                    print("⚠️ WebSocketHandler: Missing command payload")
+                    return
                 }
 
-            case "batch":
-                if let payload = json["payload"],
-                   let batchData = try? JSONSerialization.data(withJSONObject: payload),
-                   let batch = try? JSONDecoder().decode(MCPBatch.self, from: batchData) {
-                    await bridge.handleBatch(batch, from: ws)
+                let commandData: Data
+                do {
+                    commandData = try JSONSerialization.data(withJSONObject: payload)
+                } catch {
+                    print("⚠️ WebSocketHandler: Failed to serialize command payload: \(error.localizedDescription)")
+                    return
                 }
+
+                let command: MCPCommand
+                do {
+                    command = try JSONDecoder().decode(MCPCommand.self, from: commandData)
+                } catch {
+                    print("⚠️ WebSocketHandler: Failed to decode command: \(error.localizedDescription)")
+                    return
+                }
+
+                await bridge.handleCommand(command, from: ws)
+
+            case "batch":
+                guard let payload = json["payload"] else {
+                    print("⚠️ WebSocketHandler: Missing batch payload")
+                    return
+                }
+
+                let batchData: Data
+                do {
+                    batchData = try JSONSerialization.data(withJSONObject: payload)
+                } catch {
+                    print("⚠️ WebSocketHandler: Failed to serialize batch payload: \(error.localizedDescription)")
+                    return
+                }
+
+                let batch: MCPBatch
+                do {
+                    batch = try JSONDecoder().decode(MCPBatch.self, from: batchData)
+                } catch {
+                    print("⚠️ WebSocketHandler: Failed to decode batch: \(error.localizedDescription)")
+                    return
+                }
+
+                await bridge.handleBatch(batch, from: ws)
 
             default:
                 break

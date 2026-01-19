@@ -16,9 +16,11 @@ struct AwareModifier: ViewModifier {
     let label: String?
     let captureVisuals: Bool
     let parentId: String?
+    let ttl: TimeInterval?
 
     @State private var capturedFrame: CGRect = .zero
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(AppState.self) private var appState
 
     func body(content: Content) -> some View {
         content
@@ -50,7 +52,10 @@ struct AwareModifier: ViewModifier {
                 viewId,
                 label: label,
                 isContainer: false,
-                parentId: parentId
+                parentId: parentId,
+                projectId: appState.currentAwareProject?.id.uuidString,
+                sessionId: appState.currentSessionId,
+                ttl: ttl
             )
             let visual = captureVisuals ? captureVisualProperties(frame: frame) : nil
             Aware.shared.updateView(viewId, frame: frame, visual: visual)
@@ -81,8 +86,10 @@ struct AwareContainerModifier: ViewModifier {
     let containerId: String
     let label: String?
     let parentId: String?
+    let ttl: TimeInterval?
 
     @State private var capturedFrame: CGRect = .zero
+    @Environment(AppState.self) private var appState
 
     func body(content: Content) -> some View {
         content
@@ -114,7 +121,10 @@ struct AwareContainerModifier: ViewModifier {
                 containerId,
                 label: label,
                 isContainer: true,
-                parentId: parentId
+                parentId: parentId,
+                projectId: appState.currentAwareProject?.id.uuidString,
+                sessionId: appState.currentSessionId,
+                ttl: ttl
             )
             Aware.shared.updateFrame(containerId, frame: frame)
             await AwareLogger.shared.appeared(containerId, label)
@@ -135,8 +145,10 @@ struct AwareButtonModifier: ViewModifier {
     let buttonId: String
     let label: String
     let parentId: String?
+    let ttl: TimeInterval?
 
     @State private var capturedFrame: CGRect = .zero
+    @Environment(AppState.self) private var appState
 
     func body(content: Content) -> some View {
         content
@@ -169,7 +181,10 @@ struct AwareButtonModifier: ViewModifier {
             Aware.shared.registerView(
                 buttonId,
                 label: "Button: \(label)",
-                parentId: parentId
+                parentId: parentId,
+                projectId: appState.currentAwareProject?.id.uuidString,
+                sessionId: appState.currentSessionId,
+                ttl: ttl
             )
             let visual = AwareSnapshot(
                 frame: frame,
@@ -186,7 +201,10 @@ struct AwareButtonModifier: ViewModifier {
             Aware.shared.registerView(
                 buttonId,
                 label: "Button: \(newLabel)",
-                parentId: parentId
+                parentId: parentId,
+                projectId: appState.currentAwareProject?.id.uuidString,
+                sessionId: appState.currentSessionId,
+                ttl: ttl
             )
             let visual = AwareSnapshot(
                 frame: frame,
@@ -212,8 +230,10 @@ struct AwareTextModifier: ViewModifier {
     let textId: String
     let text: String
     let parentId: String?
+    let ttl: TimeInterval?
 
     @State private var capturedFrame: CGRect = .zero
+    @Environment(AppState.self) private var appState
 
     func body(content: Content) -> some View {
         content
@@ -243,7 +263,10 @@ struct AwareTextModifier: ViewModifier {
             Aware.shared.registerView(
                 textId,
                 label: "Text",
-                parentId: parentId
+                parentId: parentId,
+                projectId: appState.currentAwareProject?.id.uuidString,
+                sessionId: appState.currentSessionId,
+                ttl: ttl
             )
             let visual = AwareSnapshot(
                 frame: frame,
@@ -293,13 +316,15 @@ public extension View {
         _ id: String,
         label: String? = nil,
         captureVisuals: Bool = true,
-        parent: String? = nil
+        parent: String? = nil,
+        ttl: TimeInterval? = nil
     ) -> some View {
         modifier(AwareModifier(
             viewId: id,
             label: label,
             captureVisuals: captureVisuals,
-            parentId: parent
+            parentId: parent,
+            ttl: ttl
         ))
     }
 
@@ -307,12 +332,14 @@ public extension View {
     func awareContainer(
         _ id: String,
         label: String? = nil,
-        parent: String? = nil
+        parent: String? = nil,
+        ttl: TimeInterval? = nil
     ) -> some View {
         modifier(AwareContainerModifier(
             containerId: id,
             label: label,
-            parentId: parent
+            parentId: parent,
+            ttl: ttl
         ))
     }
 
@@ -320,12 +347,14 @@ public extension View {
     func awareButton(
         _ id: String,
         label: String,
-        parent: String? = nil
+        parent: String? = nil,
+        ttl: TimeInterval? = nil
     ) -> some View {
         modifier(AwareButtonModifier(
             buttonId: id,
             label: label,
-            parentId: parent
+            parentId: parent,
+            ttl: ttl
         ))
     }
 
@@ -333,20 +362,25 @@ public extension View {
     func awareText(
         _ id: String,
         text: String,
-        parent: String? = nil
+        parent: String? = nil,
+        ttl: TimeInterval? = nil
     ) -> some View {
         modifier(AwareTextModifier(
             textId: id,
             text: text,
-            parentId: parent
+            parentId: parent,
+            ttl: ttl
         ))
     }
 
     /// Register a state value for snapshot capture
     func awareState<T>(_ viewId: String, key: String, value: T) -> some View {
         self.onAppear {
-            MainActor.assumeIsolated {
-                Aware.shared.registerState(viewId, key: key, value: String(describing: value))
+            // Delay state registration to next run loop to ensure container is registered first
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    Aware.shared.registerState(viewId, key: key, value: String(describing: value))
+                }
             }
         }
         .onChange(of: String(describing: value)) { _, newValue in
@@ -369,10 +403,11 @@ public extension View {
         type: AwareActionMetadata.ActionType = .mutation,
         isDestructive: Bool = false,
         shortcut: String? = nil,
-        parent: String? = nil
+        parent: String? = nil,
+        ttl: TimeInterval? = nil
     ) -> some View {
         self
-            .awareButton(id, label: label, parent: parent)
+            .awareButton(id, label: label, parent: parent, ttl: ttl)
             .awareMetadata(
                 id,
                 description: action,
@@ -391,7 +426,8 @@ public extension View {
         action: @escaping @MainActor () async -> Void,
         type: AwareActionMetadata.ActionType = .mutation,
         isDestructive: Bool = false,
-        parent: String? = nil
+        parent: String? = nil,
+        ttl: TimeInterval? = nil
     ) -> some View {
         self
             .awareActionButton(
@@ -400,7 +436,8 @@ public extension View {
                 action: description,
                 type: type,
                 isDestructive: isDestructive,
-                parent: parent
+                parent: parent,
+                ttl: ttl
             )
             .awareAction(id, action: action)
     }

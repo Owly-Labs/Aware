@@ -8,7 +8,6 @@
 
 #if os(macOS)
 import Foundation
-import AwareCore
 
 // MARK: - IPC Transport Mode
 
@@ -158,7 +157,7 @@ public final class AwareMacOSIPCService {
     /// - Parameters:
     ///   - command: Aware command to send
     /// - Returns: Command result
-    public func sendCommand(_ command: AwareCommand) async throws -> AwareCommandResult {
+    public func sendCommand(_ command: AwareMacOSCommand) async throws -> AwareCommandResult {
         guard isConfigured, let ipcPath = ipcPath else {
             throw IPCError.notConfigured
         }
@@ -184,7 +183,7 @@ public final class AwareMacOSIPCService {
     }
 
     /// Send command via file-based IPC (~50ms latency)
-    private func sendCommandViaFiles(_ command: AwareCommand, ipcPath: String) async throws -> AwareCommandResult {
+    private func sendCommandViaFiles(_ command: AwareMacOSCommand, ipcPath: String) async throws -> AwareCommandResult {
         let commandPath = "\(ipcPath)/command.json"
         let resultPath = "\(ipcPath)/result.json"
 
@@ -229,7 +228,7 @@ public final class AwareMacOSIPCService {
     }
 
     /// Send command via WebSocket IPC (<5ms latency)
-    private func sendCommandViaWebSocket(_ command: AwareCommand) async throws -> AwareCommandResult {
+    private func sendCommandViaWebSocket(_ command: AwareMacOSCommand) async throws -> AwareCommandResult {
         // TODO: Implement WebSocket transport
         // This requires URLSession WebSocket support or a WebSocket library
         throw IPCError.notImplemented("WebSocket transport not yet implemented")
@@ -323,7 +322,7 @@ public enum IPCError: Error, LocalizedError {
 // MARK: - Aware Command & Result Types
 
 /// Command sent via IPC
-public struct AwareCommand: Codable, Sendable {
+public struct AwareMacOSCommand: Codable, Sendable {
     public let id: String
     public let action: String
     public let parameters: [String: String]
