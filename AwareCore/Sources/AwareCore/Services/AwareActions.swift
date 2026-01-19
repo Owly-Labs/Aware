@@ -528,7 +528,7 @@ extension Aware {
 
     /// Find view at a specific point
     private func findViewAt(_ point: CGPoint) -> AwareViewSnapshot? {
-        viewRegistry.values.first { snapshot in
+        viewRegistry.values.map { $0.snapshot }.first { snapshot in
             guard let frame = snapshot.frame else { return false }
             return frame.contains(point)
         }

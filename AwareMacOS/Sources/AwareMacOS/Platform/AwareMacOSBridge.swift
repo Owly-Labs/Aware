@@ -8,6 +8,7 @@
 
 #if os(macOS)
 import Foundation
+import AwareCore
 
 // MARK: - IPC Transport Mode
 

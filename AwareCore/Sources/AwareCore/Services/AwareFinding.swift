@@ -14,13 +14,13 @@ extension Aware {
 
     /// Find elements matching a predicate
     public func findElements(where predicate: (AwareViewSnapshot) -> Bool) -> [AwareViewSnapshot] {
-        viewRegistry.values.filter(predicate)
+        viewRegistry.values.map { $0.snapshot }.filter(predicate)
     }
 
     /// Find elements by label (partial match, case-insensitive)
     public func findByLabel(_ label: String) -> [AwareViewSnapshot] {
         let lowered = label.lowercased()
-        return viewRegistry.values.filter {
+        return viewRegistry.values.map { $0.snapshot }.filter {
             $0.label?.lowercased().contains(lowered) == true
         }
     }
@@ -28,36 +28,36 @@ extension Aware {
     /// Find elements by text content (partial match)
     public func findByText(_ text: String) -> [AwareViewSnapshot] {
         let lowered = text.lowercased()
-        return viewRegistry.values.filter {
+        return viewRegistry.values.map { $0.snapshot }.filter {
             $0.isVisible && $0.visual?.text?.lowercased().contains(lowered) == true
         }
     }
 
     /// Find elements by state key-value
     public func findByState(key: String, value: String) -> [AwareViewSnapshot] {
-        viewRegistry.values.filter { snapshot in
+        viewRegistry.values.map { $0.snapshot }.filter { snapshot in
             snapshot.isVisible && stateRegistry[snapshot.id]?[key] == value
         }
     }
 
     /// Find all tappable elements
     public func findTappable() -> [AwareViewSnapshot] {
-        viewRegistry.values.filter { $0.action != nil && $0.isVisible }
+        viewRegistry.values.map { $0.snapshot }.filter { $0.action != nil && $0.isVisible }
     }
 
     /// Find elements by action type
     public func findByActionType(_ type: AwareActionMetadata.ActionType) -> [AwareViewSnapshot] {
-        viewRegistry.values.filter { $0.action?.actionType == type && $0.isVisible }
+        viewRegistry.values.map { $0.snapshot }.filter { $0.action?.actionType == type && $0.isVisible }
     }
 
     /// Find elements with focus
     public func findFocused() -> AwareViewSnapshot? {
-        viewRegistry.values.first { $0.visual?.isFocused == true }
+        viewRegistry.values.map { $0.snapshot }.first { $0.visual?.isFocused == true }
     }
 
     /// Query builder for chainable element finding
     public func query() -> AwareElementQuery {
-        let visibleSnapshots = viewRegistry.values.filter { $0.isVisible }
+        let visibleSnapshots = viewRegistry.values.map { $0.snapshot }.filter { $0.isVisible }
         return AwareElementQuery(snapshots: Array(visibleSnapshots), stateRegistry: stateRegistry)
     }
 

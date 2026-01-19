@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import AwareCore
 
 // MARK: - Breathe MCP Adapter
 

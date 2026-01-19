@@ -28,10 +28,10 @@ public final class Aware: ObservableObject {
     // MARK: - State Registry
 
     /// Registered views with session/project context
-    @Published var viewRegistry: [String: AwareViewRegistration] = [:]
+    @Published public var viewRegistry: [String: AwareViewRegistration] = [:]
 
     /// State values by view ID
-    var stateRegistry: [String: [String: String]] = [:]
+    public var stateRegistry: [String: [String: String]] = [:]
 
     /// Parent-child relationships
     var parentChildMap: [String: String] = [:]  // childId -> parentId
@@ -444,7 +444,7 @@ public final class Aware: ObservableObject {
     }
 
     /// Enforce size limit using LRU eviction
-    private func enforceSizeLimit() {
+    internal func enforceSizeLimit() {
         guard viewRegistry.count > maxRegistrations else { return }
 
         let sorted = viewRegistry.sorted { $0.value.lastAccessedAt < $1.value.lastAccessedAt }
@@ -456,7 +456,7 @@ public final class Aware: ObservableObject {
         }
         viewRegistry = newRegistry
 
-        logger.warning("Aware: Registry size limit enforced - evicted \(sorted.count - maxRegistrations) least recently used views")
+        logger.warning("Aware: Registry size limit enforced - evicted \(sorted.count - self.maxRegistrations) least recently used views")
     }
 
     /// Clear all registered views

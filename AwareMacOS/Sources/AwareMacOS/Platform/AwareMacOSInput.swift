@@ -9,6 +9,7 @@
 #if os(macOS)
 import AppKit
 import Foundation
+import AwareCore
 
 // MARK: - Keyboard Input Helper
 
