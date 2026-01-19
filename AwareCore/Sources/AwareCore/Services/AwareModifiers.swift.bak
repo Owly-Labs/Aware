@@ -55,7 +55,7 @@ struct AwareModifier: ViewModifier {
                 isContainer: false,
                 parentId: parentId,
                 projectId: nil, // appState.currentAwareProject?.id.uuidString,
-                sessionId: nil, // appState.currentSessionId,
+                sessionId: appState.currentSessionId,
                 ttl: ttl
             )
             let visual = captureVisuals ? captureVisualProperties(frame: frame) : nil
@@ -124,7 +124,7 @@ struct AwareContainerModifier: ViewModifier {
                 isContainer: true,
                 parentId: parentId,
                 projectId: nil, // appState.currentAwareProject?.id.uuidString,
-                sessionId: nil, // appState.currentSessionId,
+                sessionId: appState.currentSessionId,
                 ttl: ttl
             )
             Aware.shared.updateFrame(containerId, frame: frame)
@@ -184,7 +184,7 @@ struct AwareButtonModifier: ViewModifier {
                 label: "Button: \(label)",
                 parentId: parentId,
                 projectId: nil, // appState.currentAwareProject?.id.uuidString,
-                sessionId: nil, // appState.currentSessionId,
+                sessionId: appState.currentSessionId,
                 ttl: ttl
             )
             let visual = AwareSnapshot(
@@ -204,7 +204,7 @@ struct AwareButtonModifier: ViewModifier {
                 label: "Button: \(newLabel)",
                 parentId: parentId,
                 projectId: nil, // appState.currentAwareProject?.id.uuidString,
-                sessionId: nil, // appState.currentSessionId,
+                sessionId: appState.currentSessionId,
                 ttl: ttl
             )
             let visual = AwareSnapshot(
@@ -266,7 +266,7 @@ struct AwareTextModifier: ViewModifier {
                 label: "Text",
                 parentId: parentId,
                 projectId: nil, // appState.currentAwareProject?.id.uuidString,
-                sessionId: nil, // appState.currentSessionId,
+                sessionId: appState.currentSessionId,
                 ttl: ttl
             )
             let visual = AwareSnapshot(
