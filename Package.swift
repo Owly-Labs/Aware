@@ -30,15 +30,8 @@ let package = Package(
             name: "AwareBackendClient",
             targets: ["AwareBackendClient"]
         ),
-        .library(
-            name: "AwareBridge",
-            targets: ["AwareBridge"]
-        ),
     ],
     dependencies: [
-        // WebSocket dependencies for AwareBridge
-        .package(url: "https://github.com/apple/swift-nio.git", from: "2.62.0"),
-        .package(url: "https://github.com/apple/swift-nio-ssl.git", from: "2.25.0"),
         // Test dependencies
         .package(url: "https://github.com/nalexn/ViewInspector", from: "0.9.0"),
         .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", from: "1.15.0"),
@@ -86,25 +79,6 @@ let package = Package(
             name: "AwareBackendClient",
             dependencies: ["AwareCore"],
             path: "AwareBackendClient/swift/Sources/AwareBackendClient",
-            swiftSettings: [
-                .enableExperimentalFeature("StrictConcurrency")
-            ]
-        ),
-
-        // MARK: - Bridge Package (WebSocket IPC)
-
-        .target(
-            name: "AwareBridge",
-            dependencies: [
-                "AwareCore",
-                .product(name: "NIO", package: "swift-nio"),
-                .product(name: "NIOCore", package: "swift-nio"),
-                .product(name: "NIOPosix", package: "swift-nio"),
-                .product(name: "NIOHTTP1", package: "swift-nio"),
-                .product(name: "NIOWebSocket", package: "swift-nio"),
-                .product(name: "NIOSSL", package: "swift-nio-ssl")
-            ],
-            path: "AwareBridge/Sources/AwareBridge",
             swiftSettings: [
                 .enableExperimentalFeature("StrictConcurrency")
             ]
