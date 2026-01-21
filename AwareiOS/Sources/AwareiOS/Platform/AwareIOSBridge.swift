@@ -8,6 +8,7 @@
 
 #if os(iOS)
 import Foundation
+import AwareCore
 
 #if canImport(AwareBridge)
 #endif
@@ -28,7 +29,7 @@ public final class AwareIPCService {
     private var ipcPath: String  // var to allow fallback path updates
     private let transportMode: IPCTransportMode
     private let config: AwareIOSConfiguration
-    private var heartbeatTask: Task<Void, Never>?
+    nonisolated(unsafe) private var heartbeatTask: Task<Void, Never>?
 
     #if canImport(AwareBridge)
     private var webSocketClient: WebSocketIPCClient?
@@ -227,7 +228,7 @@ public final class AwareIPCService {
     }
 
     deinit {
-        // Cancel heartbeat task directly (Task.cancel() is safe from deinit)
+        // Cancel heartbeat task directly in deinit (can't call async methods)
         heartbeatTask?.cancel()
         #if canImport(AwareBridge)
         Task { [webSocketClient] in

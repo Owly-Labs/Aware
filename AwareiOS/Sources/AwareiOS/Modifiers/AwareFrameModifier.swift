@@ -105,10 +105,10 @@ public final class AwareFrameTracker {
     /// - Returns: Reconstructed CGRect from stored state, or nil if not found
     public func getFrame(_ viewId: String) async -> CGRect? {
         guard
-            let xStr = await Aware.shared.getStateValue(viewId, key: "frame.x"),
-            let yStr = await Aware.shared.getStateValue(viewId, key: "frame.y"),
-            let widthStr = await Aware.shared.getStateValue(viewId, key: "frame.width"),
-            let heightStr = await Aware.shared.getStateValue(viewId, key: "frame.height"),
+            let xStr = await Aware.shared.getStateString(viewId, key: "frame.x"),
+            let yStr = await Aware.shared.getStateString(viewId, key: "frame.y"),
+            let widthStr = await Aware.shared.getStateString(viewId, key: "frame.width"),
+            let heightStr = await Aware.shared.getStateString(viewId, key: "frame.height"),
             let x = Double(xStr),
             let y = Double(yStr),
             let width = Double(widthStr),
