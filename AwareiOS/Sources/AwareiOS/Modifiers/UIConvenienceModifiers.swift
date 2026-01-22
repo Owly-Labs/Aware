@@ -8,6 +8,7 @@
 
 #if os(iOS)
 import SwiftUI
+import AwareCore
 
 // MARK: - Loading State
 
@@ -308,6 +309,82 @@ extension View {
                 description: "\(label): \(isOn.wrappedValue ? "On" : "Off")",
                 type: .mutation
             )
+    }
+}
+
+// MARK: - Behavior Metadata
+
+extension View {
+    /// Register backend behavior metadata for a data-bound view
+    /// Provides LLM with context about data sources, refresh patterns, and validation rules
+    public func uiBehavior(
+        _ id: String,
+        dataSource: String? = nil,
+        refreshTrigger: String? = nil,
+        cacheDuration: String? = nil,
+        errorHandling: String? = nil,
+        loadingBehavior: String? = nil,
+        validationRules: [String]? = nil,
+        boundModel: String? = nil,
+        dependencies: [String]? = nil
+    ) -> some View {
+        var result = self
+            .awareState(id, key: "dataSource", value: dataSource ?? "")
+            .awareState(id, key: "refreshTrigger", value: refreshTrigger ?? "")
+            .awareState(id, key: "cacheDuration", value: cacheDuration ?? "")
+            .awareState(id, key: "errorHandling", value: errorHandling ?? "")
+            .awareState(id, key: "loadingBehavior", value: loadingBehavior ?? "")
+            .awareState(id, key: "boundModel", value: boundModel ?? "")
+
+        if let rules = validationRules {
+            result = result.awareState(id, key: "validationRules", value: rules.joined(separator: "; "))
+        }
+        if let deps = dependencies {
+            result = result.awareState(id, key: "dependencies", value: deps.joined(separator: ", "))
+        }
+
+        return result.awareMetadata(
+            id,
+            description: "Data-bound view: \(boundModel ?? dataSource ?? "unknown")",
+            type: .network
+        )
+    }
+}
+
+// MARK: - Debug Context
+
+extension View {
+    /// Add debug context explaining why view is in current state
+    /// Helps LLM understand the reasoning behind UI state during debugging
+    public func uiDebugContext(_ id: String, context: String) -> some View {
+        self.awareState(id, key: "_debugContext", value: context)
+    }
+
+    /// Track view lifecycle events (appeared, disappeared) with timestamps
+    public func uiLifecycle(_ id: String) -> some View {
+        self
+            .onAppear {
+                Task { @MainActor in
+                    Aware.shared.registerState(id, key: "_lifecycle", value: "appeared")
+                    Aware.shared.registerState(id, key: "_lastAppear", value: ISO8601DateFormatter().string(from: Date()))
+                }
+            }
+            .onDisappear {
+                Task { @MainActor in
+                    Aware.shared.registerState(id, key: "_lifecycle", value: "disappeared")
+                    Aware.shared.registerState(id, key: "_lastDisappear", value: ISO8601DateFormatter().string(from: Date()))
+                }
+            }
+    }
+
+    /// Assert a condition and log result to snapshot for LLM debugging
+    public func uiAssert(_ id: String, condition: Bool, message: String) -> some View {
+        self.onAppear {
+            Task { @MainActor in
+                Aware.shared.registerState(id, key: "_assertion", value: condition ? "passed" : "failed")
+                Aware.shared.registerState(id, key: "_assertionMessage", value: message)
+            }
+        }
     }
 }
 
