@@ -328,26 +328,21 @@ extension View {
         boundModel: String? = nil,
         dependencies: [String]? = nil
     ) -> some View {
-        var result = self
+        // Always include all states to avoid opaque type reassignment issues
+        self
             .awareState(id, key: "dataSource", value: dataSource ?? "")
             .awareState(id, key: "refreshTrigger", value: refreshTrigger ?? "")
             .awareState(id, key: "cacheDuration", value: cacheDuration ?? "")
             .awareState(id, key: "errorHandling", value: errorHandling ?? "")
             .awareState(id, key: "loadingBehavior", value: loadingBehavior ?? "")
             .awareState(id, key: "boundModel", value: boundModel ?? "")
-
-        if let rules = validationRules {
-            result = result.awareState(id, key: "validationRules", value: rules.joined(separator: "; "))
-        }
-        if let deps = dependencies {
-            result = result.awareState(id, key: "dependencies", value: deps.joined(separator: ", "))
-        }
-
-        return result.awareMetadata(
-            id,
-            description: "Data-bound view: \(boundModel ?? dataSource ?? "unknown")",
-            type: .network
-        )
+            .awareState(id, key: "validationRules", value: validationRules?.joined(separator: "; ") ?? "")
+            .awareState(id, key: "dependencies", value: dependencies?.joined(separator: ", ") ?? "")
+            .awareMetadata(
+                id,
+                description: "Data-bound view: \(boundModel ?? dataSource ?? "unknown")",
+                type: .network
+            )
     }
 }
 
