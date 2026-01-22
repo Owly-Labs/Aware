@@ -312,7 +312,38 @@ extension View {
     }
 }
 
-// MARK: - Behavior Metadata
+// MARK: - Behavior Metadata Modifier
+
+private struct UIBehaviorModifier: ViewModifier {
+    let id: String
+    let dataSource: String
+    let refreshTrigger: String
+    let cacheDuration: String
+    let errorHandling: String
+    let loadingBehavior: String
+    let boundModel: String
+    let validationRules: String
+    let dependencies: String
+    let descriptionText: String
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear {
+                Task { @MainActor in
+                    Aware.shared.registerState(id, key: "dataSource", value: dataSource)
+                    Aware.shared.registerState(id, key: "refreshTrigger", value: refreshTrigger)
+                    Aware.shared.registerState(id, key: "cacheDuration", value: cacheDuration)
+                    Aware.shared.registerState(id, key: "errorHandling", value: errorHandling)
+                    Aware.shared.registerState(id, key: "loadingBehavior", value: loadingBehavior)
+                    Aware.shared.registerState(id, key: "boundModel", value: boundModel)
+                    Aware.shared.registerState(id, key: "validationRules", value: validationRules)
+                    Aware.shared.registerState(id, key: "dependencies", value: dependencies)
+                    Aware.shared.registerState(id, key: "_description", value: descriptionText)
+                    Aware.shared.registerState(id, key: "_actionType", value: "network")
+                }
+            }
+    }
+}
 
 extension View {
     /// Register backend behavior metadata for a data-bound view
@@ -328,21 +359,18 @@ extension View {
         boundModel: String? = nil,
         dependencies: [String]? = nil
     ) -> some View {
-        // Always include all states to avoid opaque type reassignment issues
-        self
-            .awareState(id, key: "dataSource", value: dataSource ?? "")
-            .awareState(id, key: "refreshTrigger", value: refreshTrigger ?? "")
-            .awareState(id, key: "cacheDuration", value: cacheDuration ?? "")
-            .awareState(id, key: "errorHandling", value: errorHandling ?? "")
-            .awareState(id, key: "loadingBehavior", value: loadingBehavior ?? "")
-            .awareState(id, key: "boundModel", value: boundModel ?? "")
-            .awareState(id, key: "validationRules", value: validationRules?.joined(separator: "; ") ?? "")
-            .awareState(id, key: "dependencies", value: dependencies?.joined(separator: ", ") ?? "")
-            .awareMetadata(
-                id,
-                description: "Data-bound view: \(boundModel ?? dataSource ?? "unknown")",
-                type: .network
-            )
+        self.modifier(UIBehaviorModifier(
+            id: id,
+            dataSource: dataSource ?? "",
+            refreshTrigger: refreshTrigger ?? "",
+            cacheDuration: cacheDuration ?? "",
+            errorHandling: errorHandling ?? "",
+            loadingBehavior: loadingBehavior ?? "",
+            boundModel: boundModel ?? "",
+            validationRules: validationRules?.joined(separator: "; ") ?? "",
+            dependencies: dependencies?.joined(separator: ", ") ?? "",
+            descriptionText: "Data-bound view: \(boundModel ?? dataSource ?? "unknown")"
+        ))
     }
 }
 
