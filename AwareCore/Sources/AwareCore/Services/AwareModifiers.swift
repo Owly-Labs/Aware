@@ -585,7 +585,7 @@ public enum StateUpdateFrequency {
     case perFiveSeconds  // Updates every ~5s (e.g., battery level)
     case perMinute    // Updates every ~60s (e.g., date/time display)
     case perHour      // Updates every ~3600s (e.g., weather data)
-    case static       // Never updates after initial registration
+    case never        // Never updates after initial registration
 
     var warningThreshold: TimeInterval {
         switch self {
@@ -593,7 +593,7 @@ public enum StateUpdateFrequency {
         case .perFiveSeconds: return 15.0
         case .perMinute: return 180.0
         case .perHour: return 7200.0
-        case .static: return .infinity
+        case .never: return .infinity
         }
     }
 }
