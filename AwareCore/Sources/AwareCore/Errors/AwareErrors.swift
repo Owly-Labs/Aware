@@ -305,6 +305,14 @@ public extension AwareError {
 
     /// Logs the error with appropriate severity
     func log(with logger: (String, ErrorSeverity) -> Void = { print("[\($1.rawValue.uppercased())] \($0)") }) {
+        // Check suppression flag (set by AwareLogging.configureLogs())
+        let shouldSuppress = UserDefaults.standard.bool(forKey: "aware_suppress_state_warnings")
+
+        // Always log errors, suppress only warnings/info
+        guard !shouldSuppress || severity == .error else {
+            return // Suppress warning/info logs when flag is set
+        }
+
         logger(errorDescription ?? "Unknown error", severity)
         if let suggestion = recoverySuggestion {
             logger("Suggestion: \(suggestion)", .info)
