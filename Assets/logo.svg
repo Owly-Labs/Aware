@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="#161b2e"/>
+
+  <!-- Grid pattern -->
+  <line x1="128" y1="0" x2="128" y2="512" stroke="#1e3a5f" stroke-width="0.5"/>
+  <line x1="256" y1="0" x2="256" y2="512" stroke="#1e3a5f" stroke-width="0.5"/>
+  <line x1="384" y1="0" x2="384" y2="512" stroke="#1e3a5f" stroke-width="0.5"/>
+  <line x1="0" y1="128" x2="512" y2="128" stroke="#1e3a5f" stroke-width="0.5"/>
+  <line x1="0" y1="256" x2="512" y2="256" stroke="#1e3a5f" stroke-width="0.5"/>
+  <line x1="0" y1="384" x2="512" y2="384" stroke="#1e3a5f" stroke-width="0.5"/>
+
+  <!-- Scan lines -->
+  <rect x="80" y="140" width="352" height="1" fill="#1e3a5f"/>
+  <rect x="80" y="200" width="352" height="1" fill="#1e3a5f"/>
+  <rect x="80" y="360" width="352" height="1" fill="#1e3a5f"/>
+
+  <!-- Ghost body -->
+  <path d="
+    M 256 100
+    C 176 100, 140 160, 140 230
+    L 140 370
+    C 140 380, 148 388, 158 380
+    L 178 360 C 186 354, 196 354, 204 360
+    L 224 380 C 232 386, 242 386, 250 380
+    L 262 368 C 270 362, 280 362, 288 368
+    L 308 386 C 316 392, 326 392, 334 386
+    L 354 366 C 362 360, 372 368, 372 378
+    L 372 230
+    C 372 160, 336 100, 256 100 Z
+  " fill="#c8d3e0"/>
+
+  <!-- Left eye socket -->
+  <ellipse cx="216" cy="220" rx="28" ry="32" fill="#161b2e"/>
+  <!-- Left eye iris -->
+  <ellipse cx="216" cy="220" rx="24" ry="28" fill="#0c6b9e"/>
+  <!-- Left eye pupil -->
+  <ellipse cx="216" cy="220" rx="12" ry="15" fill="#0ea5e9"/>
+  <!-- Left eye highlight -->
+  <circle cx="208" cy="211" r="5" fill="#ffffff"/>
+
+  <!-- Right eye socket -->
+  <ellipse cx="296" cy="220" rx="28" ry="32" fill="#161b2e"/>
+  <!-- Right eye iris -->
+  <ellipse cx="296" cy="220" rx="24" ry="28" fill="#0c6b9e"/>
+  <!-- Right eye pupil -->
+  <ellipse cx="296" cy="220" rx="12" ry="15" fill="#0ea5e9"/>
+  <!-- Right eye highlight -->
+  <circle cx="288" cy="211" r="5" fill="#ffffff"/>
+
+  <!-- Swift bird mark -->
+  <path d="
+    M 402 68
+    C 402 68, 388 82, 374 92
+    C 385 88, 394 88, 402 92
+    C 388 100, 372 106, 361 107
+    C 372 110, 388 109, 402 102
+    C 405 105, 406 109, 406 113
+    C 410 106, 410 95, 402 68 Z
+  " fill="#F05138"/>
+
+  <!-- ghostID brackets -->
+  <path d="M 120 150 L 108 150 L 108 290 L 120 290" stroke="#2980b9" stroke-width="2.5" fill="none"/>
+  <path d="M 392 150 L 404 150 L 404 290 L 392 290" stroke="#2980b9" stroke-width="2.5" fill="none"/>
+
+  <!-- .ghostID label -->
+  <text x="256" y="312" text-anchor="middle" font-family="monospace" font-size="14" fill="#2980b9">.ghostID</text>
+</svg>
