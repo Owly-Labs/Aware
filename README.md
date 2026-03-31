@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="Assets/banner.svg" alt="SwiftAware — Ghost UI toolkit for LLM-assisted iOS development" width="100%">
+  <img src="Assets/banner.svg" alt="SwiftAware — Ghost UI toolkit for LLM-assisted Swift and iOS development" width="100%">
 </p>
 
 <p align="center">

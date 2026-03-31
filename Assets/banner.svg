@@ -253,7 +253,7 @@
   </g>
 
   <text x="560" y="248" font-family="-apple-system, BlinkMacSystemFont, Helvetica Neue, sans-serif" font-weight="700" font-size="96" fill="#e8f0e8">SwiftAware</text>
-  <text x="564" y="316" font-family="-apple-system, BlinkMacSystemFont, Helvetica Neue, sans-serif" font-weight="400" font-size="28" fill="#5BAD6F">Ghost UI toolkit for LLM-assisted iOS development</text>
+  <text x="564" y="316" font-family="-apple-system, BlinkMacSystemFont, Helvetica Neue, sans-serif" font-weight="400" font-size="28" fill="#5BAD6F">Ghost UI toolkit for LLM-assisted Swift and iOS development</text>
 
   <!-- Feature pills -->
   <rect x="564" y="368" width="116" height="34" rx="17" fill="#0d2014" stroke="#1e4a2b" stroke-width="1"/>
