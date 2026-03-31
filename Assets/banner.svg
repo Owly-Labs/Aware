@@ -1,5 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640">
   <defs>
+    <!-- Singularity -->
+    <radialGradient id="sing" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#FFFEF5;stop-opacity:1" />
+      <stop offset="8%" style="stop-color:#FFF5D4;stop-opacity:0.98" />
+      <stop offset="20%" style="stop-color:#F4C430;stop-opacity:0.85" />
+      <stop offset="45%" style="stop-color:#E8A020;stop-opacity:0.4" />
+      <stop offset="100%" style="stop-color:#CC8400;stop-opacity:0" />
+    </radialGradient>
+
+    <!-- Layer gradients -->
     <linearGradient id="h1" x1="0%" y1="100%" x2="100%" y2="0%">
       <stop offset="0%" style="stop-color:#0d2014" />
       <stop offset="100%" style="stop-color:#1e4a2b;stop-opacity:0.8" />
@@ -12,14 +22,59 @@
       <stop offset="0%" style="stop-color:#4d9e60" />
       <stop offset="100%" style="stop-color:#6DC882;stop-opacity:0.82" />
     </linearGradient>
+    <linearGradient id="h4" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7EDBA0" />
+      <stop offset="40%" style="stop-color:#5BAD6F" />
+      <stop offset="100%" style="stop-color:#00D4AA;stop-opacity:0.45" />
+    </linearGradient>
+
+    <!-- Beam gradient -->
+    <linearGradient id="cB" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00D4AA;stop-opacity:0.65" />
+      <stop offset="60%" style="stop-color:#00D4AA;stop-opacity:0.15" />
+      <stop offset="100%" style="stop-color:#00D4AA;stop-opacity:0" />
+    </linearGradient>
+
+    <!-- Wordmark: subtle shimmer left-to-right -->
+    <linearGradient id="wm" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#D0D0D0" />
+      <stop offset="40%" style="stop-color:#F0F0F0" />
+      <stop offset="50%" style="stop-color:#FFFFFF" />
+      <stop offset="60%" style="stop-color:#F0F0F0" />
+      <stop offset="100%" style="stop-color:#D0D0D0" />
+      <animateTransform attributeName="gradientTransform" type="translate"
+        values="-0.8;0.8;-0.8" dur="10s" repeatCount="indefinite" />
+    </linearGradient>
+
+    <!-- Ambient -->
     <radialGradient id="amb" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" style="stop-color:#5BAD6F;stop-opacity:0.15" />
+      <stop offset="0%" style="stop-color:#5BAD6F;stop-opacity:0.03" />
       <stop offset="100%" style="stop-color:#050A06;stop-opacity:0" />
     </radialGradient>
+
+    <!-- Filters -->
+    <filter id="sB" x="-150%" y="-150%" width="400%" height="400%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="b1"/>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="b2"/>
+      <feMerge><feMergeNode in="b1"/><feMergeNode in="b2"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="pG" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="1.8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="eG" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  
+    <radialGradient id="ambG" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#5BAD6F;stop-opacity:0.25" />
+      <stop offset="100%" style="stop-color:#050A06;stop-opacity:0" />
+    </radialGradient>
+
   </defs>
-
   <rect width="1280" height="640" fill="#050A06"/>
-
+  
   <g stroke="#1a3a22" stroke-width="0.5" opacity="0.5">
     <line x1="160" y1="0" x2="160" y2="640"/>
     <line x1="320" y1="0" x2="320" y2="640"/>
@@ -33,24 +88,151 @@
     <line x1="0" y1="480" x2="1280" y2="480"/>
   </g>
 
-  <!-- Hexagonal Crystal + Ghost UI motif -->
   <g transform="translate(280, 320)">
-    <circle cx="0" cy="0" r="280" fill="url(#amb)">
+    <circle cx="0" cy="0" r="280" fill="url(#ambG)">
       <animate attributeName="r" values="260;300;260" dur="10s" repeatCount="indefinite" />
     </circle>
+    
     <g transform="scale(1.5)">
-      <polygon points="0,-72 62.4,-36 62.4,36 0,72 -62.4,36 -62.4,-36" fill="url(#h1)" opacity="0.42" stroke="#1a3a22" stroke-width="0.6">
-        <animateTransform attributeName="transform" type="rotate" values="0;360" dur="40s" repeatCount="indefinite" />
-        <animate attributeName="opacity" values="0.35;0.5;0.35" dur="9s" repeatCount="indefinite" />
-      </polygon>
-      <polygon points="0,-56 48.5,-28 48.5,28 0,56 -48.5,28 -48.5,-28" fill="url(#h2)" opacity="0.55" stroke="#2d6b3f" stroke-width="0.5">
-        <animateTransform attributeName="transform" type="rotate" values="15;375" dur="28s" repeatCount="indefinite" />
-        <animate attributeName="opacity" values="0.48;0.62;0.48" dur="7s" repeatCount="indefinite" />
-      </polygon>
-      <polygon points="0,-40 34.6,-20 34.6,20 0,40 -34.6,20 -34.6,-20" fill="url(#h3)" opacity="0.68" stroke="#5BAD6F" stroke-width="0.4">
-        <animateTransform attributeName="transform" type="rotate" values="30;390" dur="18s" repeatCount="indefinite" />
-        <animate attributeName="opacity" values="0.6;0.78;0.6" dur="5.5s" repeatCount="indefinite" />
-      </polygon>
+      <g id="crystal-mark">
+
+    <!-- Layer 1 -->
+    <polygon points="0,-72 62.4,-36 62.4,36 0,72 -62.4,36 -62.4,-36"
+             fill="url(#h1)" opacity="0.42" stroke="#1a3a22" stroke-width="0.6">
+      <animateTransform attributeName="transform" type="rotate"
+        values="0;360" dur="40s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="0.35;0.5;0.35" dur="9s" repeatCount="indefinite" />
+    </polygon>
+
+    <!-- Layer 2 -->
+    <polygon points="0,-56 48.5,-28 48.5,28 0,56 -48.5,28 -48.5,-28"
+             fill="url(#h2)" opacity="0.55" stroke="#2d6b3f" stroke-width="0.5">
+      <animateTransform attributeName="transform" type="rotate"
+        values="15;375" dur="28s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="0.48;0.62;0.48" dur="7s" repeatCount="indefinite" />
+    </polygon>
+
+    <!-- Layer 3 -->
+    <polygon points="0,-40 34.6,-20 34.6,20 0,40 -34.6,20 -34.6,-20"
+             fill="url(#h3)" opacity="0.68" stroke="#5BAD6F" stroke-width="0.4">
+      <animateTransform attributeName="transform" type="rotate"
+        values="30;390" dur="18s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="0.6;0.78;0.6" dur="5.5s" repeatCount="indefinite" />
+    </polygon>
+
+    <!-- Layer 4 -->
+    <polygon points="0,-24 20.8,-12 20.8,12 0,24 -20.8,12 -20.8,-12"
+             fill="url(#h4)" opacity="0.85" stroke="#7EDBA0" stroke-width="0.3">
+      <animateTransform attributeName="transform" type="rotate"
+        values="45;405" dur="11s" repeatCount="indefinite" />
+    </polygon>
+
+    <!-- Event Horizon -->
+    <polygon points="0,-10 8.7,-5 8.7,5 0,10 -8.7,5 -8.7,-5"
+             fill="#050A06">
+      <animateTransform attributeName="transform" type="rotate"
+        values="0;-360" dur="14s" repeatCount="indefinite" />
+    </polygon>
+
+    <!-- 6 Entry Points (compact scale) -->
+    <!-- Midpoints: (31.2,-54), (62.4,0), (31.2,54), (-31.2,54), (-62.4,0), (-31.2,-54) -->
+
+    <!-- E0 -->
+    <line x1="31.2" y1="-54" x2="0" y2="0" stroke="url(#cB)" stroke-width="0.7" stroke-linecap="round" opacity="0">
+      <animate attributeName="opacity" values="0;0.5;0.15;0" dur="3.2s" begin="0s" repeatCount="indefinite" />
+    </line>
+    <circle r="1.5" fill="#00D4AA" filter="url(#pG)" opacity="0">
+      <animate attributeName="cx" values="31.2;0" dur="2.6s" begin="0s" repeatCount="indefinite" />
+      <animate attributeName="cy" values="-54;0" dur="2.6s" begin="0s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="0;0.8;0.5;0" dur="2.6s" begin="0s" repeatCount="indefinite" />
+      <animate attributeName="r" values="1.5;0.8" dur="2.6s" begin="0s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="31.2" cy="-54" r="2.5" fill="#00D4AA" filter="url(#eG)" opacity="0">
+      <animate attributeName="opacity" values="0;0.4;0.1;0" dur="3.2s" begin="0s" repeatCount="indefinite" />
+      <animate attributeName="r" values="2;3.5;2" dur="3.2s" begin="0s" repeatCount="indefinite" />
+    </circle>
+
+    <!-- E1 -->
+    <line x1="62.4" y1="0" x2="0" y2="0" stroke="url(#cB)" stroke-width="0.7" stroke-linecap="round" opacity="0">
+      <animate attributeName="opacity" values="0;0.45;0.12;0" dur="3.2s" begin="0.53s" repeatCount="indefinite" />
+    </line>
+    <circle r="1.5" fill="#00D4AA" filter="url(#pG)" opacity="0">
+      <animate attributeName="cx" values="62.4;0" dur="2.6s" begin="0.53s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="0;0.75;0.45;0" dur="2.6s" begin="0.53s" repeatCount="indefinite" />
+      <animate attributeName="r" values="1.5;0.8" dur="2.6s" begin="0.53s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="62.4" cy="0" r="2.5" fill="#00D4AA" filter="url(#eG)" opacity="0">
+      <animate attributeName="opacity" values="0;0.38;0.1;0" dur="3.2s" begin="0.53s" repeatCount="indefinite" />
+      <animate attributeName="r" values="2;3.5;2" dur="3.2s" begin="0.53s" repeatCount="indefinite" />
+    </circle>
+
+    <!-- E2 -->
+    <line x1="31.2" y1="54" x2="0" y2="0" stroke="url(#cB)" stroke-width="0.7" stroke-linecap="round" opacity="0">
+      <animate attributeName="opacity" values="0;0.42;0.12;0" dur="3.2s" begin="1.06s" repeatCount="indefinite" />
+    </line>
+    <circle r="1.2" fill="#00D4AA" filter="url(#pG)" opacity="0">
+      <animate attributeName="cx" values="31.2;0" dur="2.6s" begin="1.06s" repeatCount="indefinite" />
+      <animate attributeName="cy" values="54;0" dur="2.6s" begin="1.06s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="0;0.7;0.4;0" dur="2.6s" begin="1.06s" repeatCount="indefinite" />
+      <animate attributeName="r" values="1.2;0.6" dur="2.6s" begin="1.06s" repeatCount="indefinite" />
+    </circle>
+
+    <!-- E3 -->
+    <line x1="-31.2" y1="54" x2="0" y2="0" stroke="url(#cB)" stroke-width="0.7" stroke-linecap="round" opacity="0">
+      <animate attributeName="opacity" values="0;0.42;0.12;0" dur="3.2s" begin="1.59s" repeatCount="indefinite" />
+    </line>
+    <circle r="1.2" fill="#00D4AA" opacity="0">
+      <animate attributeName="cx" values="-31.2;0" dur="2.6s" begin="1.59s" repeatCount="indefinite" />
+      <animate attributeName="cy" values="54;0" dur="2.6s" begin="1.59s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="0;0.65;0.35;0" dur="2.6s" begin="1.59s" repeatCount="indefinite" />
+    </circle>
+
+    <!-- E4 -->
+    <line x1="-62.4" y1="0" x2="0" y2="0" stroke="url(#cB)" stroke-width="0.7" stroke-linecap="round" opacity="0">
+      <animate attributeName="opacity" values="0;0.45;0.12;0" dur="3.2s" begin="2.12s" repeatCount="indefinite" />
+    </line>
+    <circle r="1.5" fill="#00D4AA" filter="url(#pG)" opacity="0">
+      <animate attributeName="cx" values="-62.4;0" dur="2.6s" begin="2.12s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="0;0.75;0.4;0" dur="2.6s" begin="2.12s" repeatCount="indefinite" />
+      <animate attributeName="r" values="1.5;0.8" dur="2.6s" begin="2.12s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="-62.4" cy="0" r="2.5" fill="#00D4AA" filter="url(#eG)" opacity="0">
+      <animate attributeName="opacity" values="0;0.38;0.1;0" dur="3.2s" begin="2.12s" repeatCount="indefinite" />
+      <animate attributeName="r" values="2;3.5;2" dur="3.2s" begin="2.12s" repeatCount="indefinite" />
+    </circle>
+
+    <!-- E5 -->
+    <line x1="-31.2" y1="-54" x2="0" y2="0" stroke="url(#cB)" stroke-width="0.7" stroke-linecap="round" opacity="0">
+      <animate attributeName="opacity" values="0;0.48;0.14;0" dur="3.2s" begin="2.65s" repeatCount="indefinite" />
+    </line>
+    <circle r="1.2" fill="#00D4AA" filter="url(#pG)" opacity="0">
+      <animate attributeName="cx" values="-31.2;0" dur="2.6s" begin="2.65s" repeatCount="indefinite" />
+      <animate attributeName="cy" values="-54;0" dur="2.6s" begin="2.65s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="0;0.7;0.4;0" dur="2.6s" begin="2.65s" repeatCount="indefinite" />
+    </circle>
+
+    <!-- Singularity -->
+    <circle cx="0" cy="0" r="10" fill="url(#sing)" filter="url(#sB)" opacity="0.9">
+      <animate attributeName="r" values="8;11;8.5;10;8" dur="7s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="0" cy="0" r="3" fill="#F4C430" opacity="0.92">
+      <animate attributeName="r" values="2.2;3.8;2.5;3.5;2.2" dur="7s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="0" cy="0" r="1.2" fill="#FFF5D4" opacity="0.95">
+      <animate attributeName="r" values="0.8;1.8;1;1.5;0.8" dur="7s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="0" cy="0" r="0.5" fill="#FFFFFF" opacity="0.9">
+      <animate attributeName="r" values="0.3;0.8;0.4;0.7;0.3" dur="7s" repeatCount="indefinite" />
+    </circle>
+
+    <!-- Agents -->
+    <g>
+      <animateTransform attributeName="transform" type="rotate"
+        values="0;360" dur="40s" repeatCount="indefinite" />
+      <circle cx="66" cy="0" r="1.8" fill="#162e1e" stroke="#3d8a51" stroke-width="0.4" opacity="0.5">
+        <animate attributeName="opacity" values="0.3;0.5;0.3" dur="6s" repeatCount="indefinite" />
+      </circle>
+    </g>
       
       <!-- Ghost figure inside crystal -->
       <g transform="scale(1.1) translate(0, 10)">
@@ -60,10 +242,13 @@
         <circle cx="15" cy="-5" r="5" fill="#050A06"/>
       </g>
     </g>
+
   </g>
 
+  
   <!-- Swift bird motif next to text -->
   <g transform="translate(480, 172) scale(1.3)">
+    <animateTransform attributeName="transform" type="translate" values="480,172; 480,166; 480,172" dur="3s" repeatCount="indefinite" additive="sum"/>
     <path d="M 42 8 C 42 8, 28 22, 15 32 C 26 28, 36 28, 42 32 C 28 40, 13 45, 3 46 C 13 49, 28 48, 42 41 C 44 44, 46 48, 46 52 C 50 45, 50 34, 42 8 Z" fill="#F05138"/>
   </g>
 
@@ -97,4 +282,5 @@
   <text x="752" y="524" font-family="-apple-system, sans-serif" font-size="16" fill="#4d9e60">macOS 14+</text>
   <circle cx="854" cy="520" r="2" fill="#2d6b3f"/>
   <text x="868" y="524" font-family="-apple-system, sans-serif" font-size="16" fill="#4d9e60">SPM</text>
+
 </svg>
