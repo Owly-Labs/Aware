@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640">
+  <!-- Background -->
+  <rect width="1280" height="640" fill="#111827"/>
+
+  <!-- Ghost silhouette (background, subtle) -->
+  <g transform="translate(370, 20) scale(1.6)">
+    <path d="
+      M 190 60
+      C 110 60, 74 120, 74 190
+      L 74 370
+      C 74 380, 82 388, 92 380
+      L 112 360 C 120 354, 130 354, 138 360
+      L 158 380 C 166 386, 176 386, 184 380
+      L 196 368 C 204 362, 214 362, 222 368
+      L 242 386 C 250 392, 260 392, 268 386
+      L 288 366 C 296 360, 306 368, 306 378
+      L 306 190
+      C 306 120, 270 60, 190 60 Z
+    " fill="#182036"/>
+
+    <!-- Eyes -->
+    <ellipse cx="154" cy="175" rx="16" ry="20" fill="#163554"/>
+    <ellipse cx="226" cy="175" rx="16" ry="20" fill="#163554"/>
+  </g>
+
+  <!-- Title -->
+  <text x="640" y="272" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, Helvetica Neue, sans-serif" font-weight="700" font-size="108" fill="#f1f5f9">GhostUI</text>
+
+  <!-- Tagline -->
+  <text x="640" y="342" text-anchor="middle" font-family="-apple-system, sans-serif" font-weight="400" font-size="32" fill="#8896ab">Ghost UI toolkit for LLM-assisted iOS development</text>
+
+  <!-- Feature pills -->
+  <rect x="316" y="390" width="120" height="36" rx="18" fill="#15253d" stroke="#1e3a5f" stroke-width="1"/>
+  <text x="376" y="413" text-anchor="middle" font-family="monospace" font-size="15" fill="#38bdf8">.ghostID()</text>
+
+  <rect x="454" y="390" width="120" height="36" rx="18" fill="#15253d" stroke="#1e3a5f" stroke-width="1"/>
+  <text x="514" y="413" text-anchor="middle" font-family="monospace" font-size="15" fill="#38bdf8">@AutoLog</text>
+
+  <rect x="592" y="390" width="96" height="36" rx="18" fill="#15253d" stroke="#1e3a5f" stroke-width="1"/>
+  <text x="640" y="413" text-anchor="middle" font-family="monospace" font-size="15" fill="#38bdf8">MCP</text>
+
+  <rect x="706" y="390" width="170" height="36" rx="18" fill="#15253d" stroke="#1e3a5f" stroke-width="1"/>
+  <text x="791" y="413" text-anchor="middle" font-family="monospace" font-size="15" fill="#38bdf8">@TrackedState</text>
+
+  <!-- Bottom -->
+  <text x="640" y="530" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="18" fill="#586880">Swift 6.0  ·  iOS 17+  ·  macOS 14+  ·  SPM</text>
+
+  <!-- Cogito Agency -->
+  <text x="640" y="590" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="14" fill="#3d4e63">Cogito Agency</text>
+</svg>
